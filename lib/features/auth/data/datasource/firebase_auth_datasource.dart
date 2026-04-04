@@ -1,16 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 class FirebaseAuthDatasource {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
 
-  Future<UserCredential> login(String email, String password) async {
+  Future<fb.UserCredential> login(String email, String password) async {
     return await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
   }
 
-  Future<UserCredential> register(String email, String password) async {
+  Future<fb.UserCredential> register(String email, String password) async {
     return await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
@@ -21,7 +21,7 @@ class FirebaseAuthDatasource {
     await _auth.signOut();
   }
 
-  User? getCurrentUser() {
+  fb.User? getCurrentUser() {
     return _auth.currentUser;
   }
 }

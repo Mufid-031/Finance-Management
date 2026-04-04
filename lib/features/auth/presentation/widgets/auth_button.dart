@@ -1,5 +1,5 @@
+import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart';
 
 class AuthButton extends StatelessWidget {
   final bool isLoading;
@@ -20,15 +20,19 @@ class AuthButton extends StatelessWidget {
         : SizedBox(
             width: double.infinity,
             height: 50,
-            child: GFButton(
-              size: GFSize.LARGE,
-              text: text,
-              textStyle: TextStyle(
-                fontSize: 16,
-                color: GFColors.WHITE,
-                fontWeight: FontWeight.bold,
+            child: ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(AppColors.main),
               ),
               onPressed: onPressed,
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: AppColors.backgroundColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
           );
   }

@@ -1,36 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:finance_management/features/category/data/dto/category_dto.dart';
 
-class CategoryFirestoreDatasource {
+class CategoryDatasource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> _ref(String userId) {
-    return _firestore.collection('users').doc(userId).collection('categories');
+  CollectionReference<Map<String, dynamic>> _ref(String userId) =>
+      _firestore.collection('users').doc(userId).collection('categories');
+
+  Stream<List<Map<String, dynamic>>> watchAll(String userId) {
+    return _ref(userId).snapshots().map(
+      (s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList(),
+    );
   }
 
-  Future<List<CategoryDTO>> getAll(String userId) async {
-    try {
-      final snapshot = await _ref(
-        userId,
-      ).orderBy('createdAt', descending: true).get();
-
-      return snapshot.docs
-          .map((doc) => CategoryDTO.fromMap(doc.id, doc.data()))
-          .toList();
-    } catch (e) {
-      throw Exception('Failed to fetch categories: $e');
-    }
-  }
-
-  Future<void> create(String userId, CategoryDTO dto) async {
-    await _ref(userId).add(dto.toMap());
-  }
-
-  Future<void> update(String userId, String id, CategoryDTO dto) async {
-    await _ref(userId).doc(id).update(dto.toMap());
-  }
-
-  Future<void> delete(String userId, String id) async {
-    await _ref(userId).doc(id).delete();
-  }
+  Future<void> create(String userId, Map<String, dynamic> data) =>
+      _ref(userId).add(data);
+  Future<void> update(String userId, String id, Map<String, dynamic> data) =>
+      _ref(userId).doc(id).update(data);
+  Future<void> delete(String userId, String id) =>
+      _ref(userId).doc(id).delete();
 }

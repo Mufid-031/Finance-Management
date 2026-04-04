@@ -1,38 +1,46 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/features/transaction/application/transaction_service.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
-import 'package:finance_management/features/transaction/presentation/providers/transaction_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'transaction_state.dart';
+import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 
 class TransactionNotifier extends StateNotifier<TransactionState> {
-  final TransactionService service;
-  final Ref ref;
+  final TransactionService _service;
+  final Ref _ref;
 
-  TransactionNotifier(this.service, this.ref) : super(TransactionState());
+  TransactionNotifier(this._service, this._ref) : super(TransactionState());
 
-  String get userId => ref.read(authNotifierProvider).user!.id;
+  Future<void> addTransaction({
+    required String title,
+    required double amount,
+    required String walletId,
+    required String categoryId,
+    required TransactionType type,
+    DateTime? date,
+  }) async {
+    try {
+      state = state.copyWith(isLoading: true, errorMessage: null);
 
-  Future<void> loadTransactions() async {
-    state = state.copyWith(isLoading: true);
+      final user = _ref.read(authNotifierProvider).user;
+      if (user == null) throw Exception("User tidak terautentikasi");
 
-    final transactions = await service.getTransactions(userId);
+      final tx = Transaction(
+        id: '', // Firestore akan generate ID otomatis
+        userId: user.id,
+        walletId: walletId,
+        categoryId: categoryId,
+        title: title,
+        amount: amount,
+        type: type,
+        date: date ?? DateTime.now(),
+      );
 
-    state = state.copyWith(transactions: transactions, isLoading: false);
-  }
+      await _service.saveTransaction(tx);
 
-  Future<void> createTransaction(Transaction transaction) async {
-    await service.createTransaction(userId, transaction);
-    await loadTransactions();
-  }
-
-  Future<void> updateTransaction(String id, Transaction transaction) async {
-    await service.updateTransaction(userId, id, transaction);
-    await loadTransactions();
-  }
-
-  Future<void> deleteTransaction(String id) async {
-    await service.deleteTransaction(userId, id);
-    await loadTransactions();
+      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+    }
   }
 }

@@ -1,7 +1,7 @@
+import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/features/auth/presentation/widgets/auth_button.dart';
 import 'package:finance_management/features/auth/presentation/widgets/auth_footer.dart';
 import 'package:finance_management/features/auth/presentation/widgets/auth_header.dart';
-import 'package:finance_management/features/auth/presentation/widgets/auth_social.dart';
 import 'package:finance_management/features/auth/presentation/widgets/auth_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,18 +20,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final passwordController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-
+  Widget build(BuildContext context) {
     ref.listen(authNotifierProvider, (previous, next) {
       if (next.user != null) {
         context.go('/main');
       }
-    });
-  }
 
-  @override
-  Widget build(BuildContext context) {
+      if (next.errorMessage != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
+      }
+    });
+
     final state = ref.watch(authNotifierProvider);
     final notifier = ref.read(authNotifierProvider.notifier);
 
@@ -44,11 +45,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             children: [
               AuthHeader(title: "Sign In", subtitle: "Sign in to your account"),
               SizedBox(height: 20),
-              AuthTextField(controller: emailController, label: "Email"),
-              SizedBox(height: 12),
+              AuthTextField(
+                controller: emailController,
+                label: "Email",
+                hintText: 'Enter your email',
+              ),
+              SizedBox(height: 16),
               AuthTextField(
                 controller: passwordController,
                 label: "Password",
+                hintText: 'Enter your password',
                 obscureText: true,
               ),
               SizedBox(height: 5),
@@ -60,7 +66,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   },
                   child: Text(
                     "Forgot Password?",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.main),
                   ),
                 ),
               ),
@@ -75,8 +81,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   );
                 },
               ),
-              SizedBox(height: 20),
-              AuthSocial(),
               AuthFooter(
                 text: "Don't have an account?",
                 actionText: "Sign Up",

@@ -1,5 +1,5 @@
+import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart';
 
 class AuthHeader extends StatelessWidget {
   final String title;
@@ -15,11 +15,11 @@ class AuthHeader extends StatelessWidget {
           title,
           style: TextStyle(
             fontSize: 24,
+            color: AppColors.main,
             fontWeight: FontWeight.bold,
-            color: GFColors.DARK,
           ),
         ),
-        Text(subtitle, style: TextStyle(fontSize: 16, color: GFColors.MUTED)),
+        Text(subtitle, style: TextStyle(fontSize: 16)),
       ],
     );
   }

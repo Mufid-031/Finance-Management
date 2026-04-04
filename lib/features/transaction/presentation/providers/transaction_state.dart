@@ -1,21 +1,13 @@
-import 'package:finance_management/features/transaction/domain/transaction.dart';
-
 class TransactionState {
-  final List<Transaction> transactions;
   final bool isLoading;
+  final String? errorMessage;
 
-  const TransactionState({
-    this.transactions = const [],
-    this.isLoading = false,
-  });
+  TransactionState({this.isLoading = false, this.errorMessage});
 
-  TransactionState copyWith({
-    List<Transaction>? transactions,
-    bool? isLoading,
-  }) {
+  TransactionState copyWith({bool? isLoading, String? errorMessage}) {
     return TransactionState(
-      transactions: transactions ?? this.transactions,
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage,
     );
   }
 }

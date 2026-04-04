@@ -1,9 +1,10 @@
+import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart';
 
 class AuthTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
+  final String hintText;
   final bool obscureText;
   final TextInputAction? textInputAction;
 
@@ -11,26 +12,33 @@ class AuthTextField extends StatelessWidget {
     super.key,
     required this.controller,
     required this.label,
+    required this.hintText,
     this.obscureText = false,
     this.textInputAction,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GFTextField(
-      controller: controller,
-      obscureText: obscureText,
-      textInputAction: textInputAction,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: GFColors.DARK),
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: GFColors.DARK),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontSize: 16)),
+        SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          textInputAction: textInputAction,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: hintText,
+            hintStyle: TextStyle(color: AppColors.grey),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: AppColors.grey),
+            ),
+          ),
         ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: GFColors.FOCUS),
-        ),
-      ),
+      ],
     );
   }
 }

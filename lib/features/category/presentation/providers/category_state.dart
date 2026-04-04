@@ -1,15 +1,13 @@
-import 'package:finance_management/features/category/domain/category.dart';
-
 class CategoryState {
-  final List<Category> categories;
   final bool isLoading;
+  final String? errorMessage;
 
-  const CategoryState({this.categories = const [], this.isLoading = false});
+  CategoryState({this.isLoading = false, this.errorMessage});
 
-  CategoryState copyWith({List<Category>? categories, bool? isLoading}) {
+  CategoryState copyWith({bool? isLoading, String? errorMessage}) {
     return CategoryState(
-      categories: categories ?? this.categories,
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage,
     );
   }
 }

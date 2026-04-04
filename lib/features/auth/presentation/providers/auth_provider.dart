@@ -22,5 +22,6 @@ final authServiceProvider = Provider<AuthService>((ref) {
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
   ref,
 ) {
-  return AuthNotifier(ref.watch(authServiceProvider));
+  final authService = ref.watch(authServiceProvider);
+  return AuthNotifier(authService, ref); // Kirim ref ke konstruktor
 });

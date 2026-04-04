@@ -19,18 +19,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final passwordController = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-
+  Widget build(BuildContext context) {
     ref.listen(authNotifierProvider, (previous, next) {
       if (next.user != null) {
-        context.go('/login');
+        context.go('/main');
+      }
+
+      if (next.errorMessage != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
       }
     });
-  }
 
-  @override
-  Widget build(BuildContext context) {
     final state = ref.watch(authNotifierProvider);
     final notifier = ref.read(authNotifierProvider.notifier);
 
@@ -43,11 +44,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             children: [
               AuthHeader(title: "Sign Up", subtitle: "Create your account"),
               SizedBox(height: 20),
-              AuthTextField(controller: emailController, label: "Email"),
-              SizedBox(height: 12),
+              AuthTextField(controller: emailController, label: "Email", hintText: 'Enter your email'),
+              SizedBox(height: 16),
               AuthTextField(
                 controller: passwordController,
                 label: "Password",
+                hintText: 'Enter your password',
                 obscureText: true,
               ),
               SizedBox(height: 5),

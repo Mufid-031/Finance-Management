@@ -1,33 +1,48 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:finance_management/features/transaction/data/dto/transaction_dto.dart';
 
-class TransactionFirestoreDatasource {
+class TransactionDatasource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  CollectionReference<Map<String, dynamic>> _ref(String userId) {
-    return _firestore
+  // Query transaksi berdasarkan range waktu (untuk Chart nantinya)
+  Stream<List<Map<String, dynamic>>> watchTransactions(
+    String userId, {
+    DateTime? start,
+    DateTime? end,
+  }) {
+    var query = _firestore
         .collection('users')
         .doc(userId)
-        .collection('transactions');
+        .collection('transactions')
+        .orderBy('date', descending: true);
+
+    return query.snapshots().map(
+      (s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList(),
+    );
   }
 
-  Future<List<TransactionDTO>> getAll(String userId) async {
-    final snapshot = await _ref(userId).get();
+  // ATOMIC TRANSACTION: Simpan Transaksi + Update Saldo Wallet
+  Future<void> createTransaction(
+    String userId,
+    Map<String, dynamic> txData,
+    String walletId,
+    double amount,
+    bool isIncome,
+  ) async {
+    final userRef = _firestore.collection('users').doc(userId);
+    final walletRef = userRef.collection('wallets').doc(walletId);
+    final txRef = userRef.collection('transactions').doc();
 
-    return snapshot.docs
-        .map((doc) => TransactionDTO.fromMap(doc.id, doc.data()))
-        .toList();
-  }
+    await _firestore.runTransaction((transaction) async {
+      final walletDoc = await transaction.get(walletRef);
+      if (!walletDoc.exists) throw Exception("Wallet tidak ditemukan!");
 
-  Future<void> create(String userId, TransactionDTO dto) async {
-    await _ref(userId).add(dto.toMap());
-  }
+      double currentBalance = (walletDoc.data()?['balance'] ?? 0.0).toDouble();
+      double newBalance = isIncome
+          ? currentBalance + amount
+          : currentBalance - amount;
 
-  Future<void> update(String userId, String id, TransactionDTO dto) async {
-    await _ref(userId).doc(id).update(dto.toMap());
-  }
-
-  Future<void> delete(String userId, String id) async {
-    await _ref(userId).doc(id).delete();
+      transaction.set(txRef, txData); // Simpan transaksi
+      transaction.update(walletRef, {'balance': newBalance}); // Update saldo
+    });
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:getwidget/getwidget.dart';
 
 class AuthFooter extends StatelessWidget {
   final String text;
@@ -18,13 +17,10 @@ class AuthFooter extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(text, style: TextStyle(fontSize: 15, color: GFColors.MUTED)),
+        Text(text, style: TextStyle(fontSize: 15)),
         TextButton(
           onPressed: onTap,
-          child: Text(
-            actionText,
-            style: TextStyle(fontSize: 15, color: GFColors.PRIMARY),
-          ),
+          child: Text(actionText, style: TextStyle(fontSize: 15)),
         ),
       ],
     );

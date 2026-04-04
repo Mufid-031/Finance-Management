@@ -12,15 +12,15 @@ class CategoryFormDialog extends StatefulWidget {
 
 class _CategoryFormDialogState extends State<CategoryFormDialog> {
   final _nameController = TextEditingController();
-  String type = 'Expense';
+  // Gunakan enum sebagai default value
+  CategoryType selectedType = CategoryType.expense;
 
   @override
   void initState() {
     super.initState();
-
     if (widget.category != null) {
       _nameController.text = widget.category!.name;
-      type = widget.category!.type;
+      selectedType = widget.category!.type; // Tipe data sekarang cocok (enum)
     }
   }
 
@@ -33,18 +33,23 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
         children: [
           TextField(
             controller: _nameController,
-            decoration: InputDecoration(labelText: "Category Name"),
+            decoration: const InputDecoration(labelText: "Category Name"),
           ),
-          DropdownButton(
-            value: type,
-            items: [
-              DropdownMenuItem(value: "Income", child: Text("Income")),
-              DropdownMenuItem(value: "Expense", child: Text("Expense")),
-            ],
+          const SizedBox(height: 16),
+          // Dropdown menggunakan enum
+          DropdownButton<CategoryType>(
+            value: selectedType,
+            isExpanded: true,
+            items: CategoryType.values.map((type) {
+              return DropdownMenuItem(
+                value: type,
+                child: Text(
+                  type.name.toUpperCase(),
+                ), // .name mengambil string dari enum
+              );
+            }).toList(),
             onChanged: (value) {
-              setState(() {
-                type = value!;
-              });
+              if (value != null) setState(() => selectedType = value);
             },
           ),
         ],
@@ -52,21 +57,24 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text("Cancel"),
+          child: const Text("Cancel"),
         ),
         ElevatedButton(
           onPressed: () {
+            // Validasi sederhana
+            if (_nameController.text.isEmpty) return;
+
             Navigator.pop(
               context,
               Category(
-                id: widget.category?.id ?? DateTime.now().toString(),
+                id: widget.category?.id ?? '',
                 name: _nameController.text,
-                type: type,
-                icon: "📁",
+                type: selectedType, // Kirim enum kembali
+                icon: Icons.category,
               ),
             );
           },
-          child: Text("Save"),
+          child: const Text("Save"),
         ),
       ],
     );

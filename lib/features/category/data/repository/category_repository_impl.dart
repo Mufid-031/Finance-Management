@@ -4,30 +4,45 @@ import 'package:finance_management/features/category/data/repository/category_re
 import 'package:finance_management/features/category/domain/category.dart';
 
 class CategoryRepositoryImpl implements CategoryRepository {
-  final CategoryFirestoreDatasource datasource;
+  final CategoryDatasource datasource;
 
   CategoryRepositoryImpl(this.datasource);
 
   @override
-  Future<List<Category>> getAll(String userId) async {
-    final dtos = await datasource.getAll(userId);
-    return dtos.map((e) => e.toDomain()).toList();
+  Stream<List<Category>> watchCategories(String userId) {
+    return datasource
+        .watchAll(userId)
+        .map(
+          (list) => list
+              .map((map) => CategoryDTO.fromMap(map['id'], map).toDomain())
+              .toList(),
+        );
   }
 
   @override
   Future<void> addCategory(String userId, Category category) async {
-    final dto = CategoryDTO.fromDomain(category);
-    await datasource.create(userId, dto);
+    final dto = CategoryDTO(
+      id: '',
+      name: category.name,
+      iconCode: category.icon.codePoint,
+      type: category.type == CategoryType.income ? 'income' : 'expense',
+    );
+    await datasource.create(userId, dto.toMap());
   }
 
   @override
   Future<void> updateCategory(String userId, Category category) async {
-    final dto = CategoryDTO.fromDomain(category);
-    await datasource.update(userId, category.id, dto);
+    final dto = CategoryDTO(
+      id: category.id,
+      name: category.name,
+      iconCode: category.icon.codePoint,
+      type: category.type == CategoryType.income ? 'income' : 'expense',
+    );
+    await datasource.update(userId, category.id, dto.toMap());
   }
 
   @override
-  Future<void> deleteCategory(String userId, String id) async {
-    await datasource.delete(userId, id);
+  Future<void> deleteCategory(String userId, String categoryId) async {
+    await datasource.delete(userId, categoryId);
   }
 }

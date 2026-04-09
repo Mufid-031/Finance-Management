@@ -304,6 +304,7 @@ class _MainPageState extends ConsumerState<MainPage> {
                                       onSelected: (selected) => setModalState(
                                         () => selectedWalletId = w.id,
                                       ),
+                                      selectedColor: AppColors.main,
                                     ),
                                   ),
                                 )

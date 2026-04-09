@@ -2,6 +2,7 @@ import 'package:finance_management/features/auth/presentation/pages/login_page.d
 import 'package:finance_management/features/auth/presentation/pages/register_page.dart';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/app/presentation/pages/main_page.dart';
+import 'package:finance_management/features/budget/presentation/pages/budget_page.dart';
 import 'package:finance_management/features/category/presentation/pages/category_page.dart';
 import 'package:finance_management/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,12 +41,16 @@ final goRouterProvider = Provider((ref) {
       ),
       GoRoute(path: '/main', builder: (context, state) => const MainPage()),
       GoRoute(
+        path: '/categories',
+        builder: (context, state) => const CategoryPage(),
+      ),
+      GoRoute(
         path: '/wallets',
         builder: (context, state) => const WalletPage(),
       ),
       GoRoute(
-        path: '/categories',
-        builder: (context, state) => const CategoryPage(),
+        path: '/budgets',
+        builder: (context, state) => const BudgetPage(),
       ),
     ],
   );

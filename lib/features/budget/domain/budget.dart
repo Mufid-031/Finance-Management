@@ -1,18 +1,17 @@
 class Budget {
   final String id;
-  final String userId;
   final String categoryId;
-
-  final double amount;
-  final int month;
-  final int year;
+  final String userId;
+  final double limitAmount;
+  final DateTime startDate;
+  final DateTime endDate;
 
   Budget({
     required this.id,
-    required this.userId,
     required this.categoryId,
-    required this.amount,
-    required this.month,
-    required this.year,
+    required this.userId,
+    required this.limitAmount,
+    required this.startDate,
+    required this.endDate,
   });
 }

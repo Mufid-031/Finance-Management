@@ -1,6 +1,6 @@
 import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // Pastikan import ini ada
+import 'package:go_router/go_router.dart';
 
 class QuickActions extends StatelessWidget {
   const QuickActions({super.key});
@@ -11,39 +11,39 @@ class QuickActions extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceAround, // Lebih merata
             children: [
               _actionIcon(
                 context,
-                Icons.send,
-                "Transfer",
-                AppColors.orange,
-                onTap: () =>
-                    context.push('/transfer'), // Sesuaikan path router Anda
-              ),
-              _actionIcon(
-                context,
-                Icons.account_balance_wallet,
-                "Wallet",
-                AppColors.purple,
-                onTap: () =>
-                    context.push('/wallets'), // Link ke halaman Wallet baru
-              ),
-              _actionIcon(
-                context,
-                Icons.receipt_long,
-                "Bill",
-                AppColors.green,
-                onTap: () => context.push('/bills'),
-              ),
-              _actionIcon(
-                context,
-                Icons.category,
+                Icons.category_outlined,
                 "Category",
+                AppColors.main, // Konsisten dengan brand color Anda
+                onTap: () => context.push('/categories'),
+              ),
+              _actionIcon(
+                context,
+                Icons.account_balance_wallet_outlined,
+                "Wallet",
                 AppColors.blue,
-                onTap: () => context.push('/categories'), // Untuk menu tambahan
+                onTap: () => context.push('/wallets'),
+              ),
+              _actionIcon(
+                context,
+                Icons.pie_chart_outline_rounded,
+                "Budget",
+                AppColors.orange,
+                onTap: () => context.push(
+                  '/budgets',
+                ), // Pastikan path ini terdaftar di router
+              ),
+              _actionIcon(
+                context,
+                Icons.analytics_outlined, // Berubah dari Bill ke Analytics
+                "Reports",
+                AppColors.green,
+                onTap: () => context.push('/reports'),
               ),
             ],
           ),
@@ -59,30 +59,32 @@ class QuickActions extends StatelessWidget {
     Color color, {
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      // Menggunakan InkWell agar ada efek "splash" saat diklik
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0), // Area klik sedikit lebih luas
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Icon(icon, color: color),
+    return Column(
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(15),
+          child: Container(
+            padding: const EdgeInsets.all(
+              15,
+            ), // Ukuran touch target yang lebih baik
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(18),
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-          ],
+            child: Icon(icon, color: color, size: 26),
+          ),
         ),
-      ),
+        const SizedBox(height: 10),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
     );
   }
 }

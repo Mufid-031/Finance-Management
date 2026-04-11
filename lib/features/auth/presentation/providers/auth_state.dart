@@ -7,11 +7,11 @@ class AuthState {
 
   AuthState({this.user, this.isLoading = false, this.errorMessage});
 
-  AuthState copyWith({User? user, bool? isLoading}) {
+  AuthState copyWith({User? user, bool? isLoading, String? errorMessage}) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 }

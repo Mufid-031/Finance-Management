@@ -12,25 +12,27 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
   BudgetNotifier(this._service, this._ref) : super(BudgetState());
 
   Future<void> saveBudget({
-    String? id,
     required String categoryId,
     required double limit,
+    DateTime? targetDate, // Tambahkan parameter ini
   }) async {
     state = state.copyWith(isLoading: true);
     try {
       final user = _ref.read(authNotifierProvider).user;
-      final now = DateTime.now();
+      final date =
+          targetDate ??
+          DateTime.now(); // Gunakan tanggal yang dipilih dari modal
 
       final budget = Budget(
-        id: id ?? '',
+        id: '',
         categoryId: categoryId,
         userId: user!.id,
         limitAmount: limit,
-        startDate: DateTime(now.year, now.month, 1), // Awal bulan
-        endDate: DateTime(now.year, now.month + 1, 0), // Akhir bulan
+        startDate: DateTime(date.year, date.month, 1),
+        endDate: DateTime(date.year, date.month + 1, 0),
       );
 
-      await _service.createOrUpdateBudget(budget);
+      await _service.addBudget(budget);
       state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());

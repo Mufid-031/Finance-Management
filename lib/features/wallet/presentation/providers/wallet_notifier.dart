@@ -3,6 +3,7 @@ import 'package:finance_management/features/auth/presentation/providers/auth_pro
 import 'package:finance_management/features/wallet/application/wallet_service.dart';
 import 'package:finance_management/features/wallet/domain/wallet.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_state.dart';
+import 'package:flutter/material.dart'; // Tambahkan untuk akses Icons default
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -12,38 +13,23 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
   WalletNotifier(this._service, this._ref) : super(WalletState());
 
-  Future<void> addWallet(String name, double initialBalance) async {
-    try {
-      state = state.copyWith(isLoading: true);
-      final user = _ref.read(authNotifierProvider).user;
-
-      final newWallet = Wallet(
-        id: '',
-        name: name,
-        balance: initialBalance,
-        icon: 'wallet',
-      );
-
-      await _service.addWallet(user!.id, newWallet);
-      state = state.copyWith(isLoading: false);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
-    }
-  }
-
+  // Method Save Tunggal (Bisa Add maupun Update)
   Future<void> saveWallet({
     String? id,
     required String name,
     required double balance,
+    int? iconCode, // Tambahkan parameter iconCode
   }) async {
     try {
       state = state.copyWith(isLoading: true);
       final userId = _ref.read(authNotifierProvider).user!.id;
+
       final wallet = Wallet(
         id: id ?? '',
         name: name,
         balance: balance,
-        icon: 'wallet',
+        // Gunakan iconCode yang dikirim atau default ke wallet icon
+        iconCode: iconCode ?? Icons.account_balance_wallet.codePoint,
       );
 
       if (id == null) {
@@ -51,18 +37,20 @@ class WalletNotifier extends StateNotifier<WalletState> {
       } else {
         await _service.updateWallet(userId, wallet);
       }
-      state = state.copyWith(isLoading: false);
+
+      state = state.copyWith(isLoading: false, errorMessage: null);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
+  // Tetap sediakan update khusus jika hanya ingin passing objek Wallet langsung
   Future<void> updateWallet(Wallet wallet) async {
     try {
       state = state.copyWith(isLoading: true);
       final userId = _ref.read(authNotifierProvider).user!.id;
       await _service.updateWallet(userId, wallet);
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, errorMessage: null);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -73,7 +61,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
       state = state.copyWith(isLoading: true);
       final userId = _ref.read(authNotifierProvider).user!.id;
       await _service.deleteWallet(userId, walletId);
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, errorMessage: null);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }

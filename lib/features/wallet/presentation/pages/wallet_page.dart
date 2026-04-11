@@ -1,8 +1,11 @@
+import 'package:finance_management/core/shared/widgets/empty_state_widget.dart';
 import 'package:finance_management/features/wallet/domain/wallet.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
+import 'package:finance_management/features/wallet/presentation/widgets/add_wallet_modal.dart'; // Import modal baru
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/core/utils/currency_formatter.dart';
 
 class WalletPage extends ConsumerWidget {
   const WalletPage({super.key});
@@ -16,106 +19,92 @@ class WalletPage extends ConsumerWidget {
       body: walletsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text("Error: $err")),
-        data: (wallets) => ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: wallets.length,
-          itemBuilder: (context, index) {
-            final wallet = wallets[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: AppColors.main,
-                  child: Icon(
-                    Icons.account_balance_wallet,
-                    color: Colors.black,
+        data: (wallets) {
+          if (wallets.isEmpty) {
+            return EmptyStateWidget(
+              message: "No wallets found",
+              icon: Icons.account_balance_wallet_outlined,
+              actionLabel: "Add New Wallet",
+              onActionPressed: () => _showAddWalletModal(context),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: wallets.length,
+            itemBuilder: (context, index) {
+              final wallet = wallets[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.main.withOpacity(0.1),
+                    child: Icon(
+                      IconData(wallet.iconCode, fontFamily: 'MaterialIcons'),
+                      color: AppColors.main,
+                    ),
+                  ),
+                  title: Text(
+                    wallet.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    CurrencyFormatter.format(wallet.balance),
+                    style: const TextStyle(color: AppColors.grey),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          color: AppColors.grey,
+                        ),
+                        onPressed: () =>
+                            _showAddWalletModal(context, wallet: wallet),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: AppColors.red,
+                        ),
+                        onPressed: () => _confirmDelete(context, ref, wallet),
+                      ),
+                    ],
                   ),
                 ),
-                title: Text(
-                  wallet.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text("\$${wallet.balance.toStringAsFixed(2)}"),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: AppColors.grey),
-                      onPressed: () =>
-                          _showWalletDialog(context, ref, wallet: wallet),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: AppColors.red),
-                      onPressed: () => _confirmDelete(context, ref, wallet),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.main,
-        onPressed: () => _showWalletDialog(context, ref),
+        onPressed: () => _showAddWalletModal(context),
         child: const Icon(Icons.add, color: Colors.black),
       ),
     );
   }
 
-  // --- DIALOG UNTUK ADD & EDIT ---
-  void _showWalletDialog(
-    BuildContext context,
-    WidgetRef ref, {
-    Wallet? wallet,
-  }) {
-    final nameController = TextEditingController(text: wallet?.name);
-    final balanceController = TextEditingController(
-      text: wallet?.balance.toString(),
-    );
-
-    showDialog(
+  void _showAddWalletModal(BuildContext context, {Wallet? wallet}) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(wallet == null ? "Add Wallet" : "Edit Wallet"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: "Wallet Name"),
-            ),
-            TextField(
-              controller: balanceController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: "Initial Balance"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              await ref
-                  .read(walletNotifierProvider.notifier)
-                  .saveWallet(
-                    id: wallet?.id,
-                    name: nameController.text,
-                    balance: double.tryParse(balanceController.text) ?? 0,
-                  );
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text("Save"),
-          ),
-        ],
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
+      builder: (context) => AddWalletModal(wallet: wallet),
     );
   }
 
-  // --- KONFIRMASI HAPUS ---
   void _confirmDelete(BuildContext context, WidgetRef ref, Wallet wallet) {
     showDialog(
       context: context,

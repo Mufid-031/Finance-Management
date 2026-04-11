@@ -1,245 +1,157 @@
-import 'package:finance_management/features/budget/domain/budget.dart';
+import 'package:finance_management/core/shared/widgets/custom_filter_tabs.dart';
+import 'package:finance_management/features/budget/domain/monthly_summary.dart';
+import 'package:finance_management/features/budget/presentation/widgets/add_budget_modal.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
-import 'package:finance_management/features/category/domain/category.dart';
-import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/core/utils/currency_formatter.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+final budgetTabProvider = StateProvider<int>((ref) => 0);
+final budgetFilterProvider = StateProvider<int>((ref) => 0);
 
 class BudgetPage extends ConsumerWidget {
   const BudgetPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final budgetsAsync = ref.watch(budgetsStreamProvider);
-    final categories = ref.watch(categoriesStreamProvider).value ?? [];
+    final summariesAsync = ref.watch(monthlySummariesStreamProvider);
+    final selectedTab = ref.watch(budgetFilterProvider);
     final transactions = ref.watch(transactionsStreamProvider).value ?? [];
 
     return Scaffold(
       appBar: AppBar(title: const Text("Monthly Budgets")),
-      body: budgetsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text("Error: $err")),
-        data: (budgets) {
-          if (budgets.isEmpty) {
-            return _buildEmptyState(context, ref);
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: budgets.length,
-            itemBuilder: (context, index) {
-              final budget = budgets[index];
-
-              // Cari detail kategori untuk ikon & nama
-              final category = categories.firstWhere(
-                (c) => c.id == budget.categoryId,
-                orElse: () => categories.first.copyWith(name: "Unknown"),
-              );
-
-              // Hitung pengeluaran aktual bulan ini untuk kategori ini
-              final actualSpending = transactions
-                  .where((tx) => tx.categoryId == budget.categoryId)
-                  .fold(0.0, (sum, tx) => sum + tx.amount);
-
-              return _buildBudgetCard(
-                context,
-                budget,
-                category,
-                actualSpending,
-              );
+      body: Column(
+        children: [
+          CustomFilterTabs(
+            labels: const ["ACTIVE", "CLOSED"],
+            currentIndex: selectedTab,
+            onTabChanged: (index) {
+              ref.read(budgetFilterProvider.notifier).state = index;
             },
-          );
-        },
+          ),
+          Expanded(
+            child: summariesAsync.when(
+              data: (summaries) {
+                final now = DateTime.now();
+                final filtered = summaries.where((s) {
+                  final isCurrent = s.month == now.month && s.year == now.year;
+                  return selectedTab == 0 ? isCurrent : !isCurrent;
+                }).toList();
+
+                if (filtered.isEmpty) return _buildEmptyState(context, ref);
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filtered.length,
+                  itemBuilder: (context, i) {
+                    final s = filtered[i];
+                    final spent = transactions
+                        .where(
+                          (tx) =>
+                              tx.date.month == s.month &&
+                              tx.date.year == s.year &&
+                              tx.type.name == 'expense',
+                        )
+                        .fold(0.0, (sum, tx) => sum + tx.amount);
+
+                    return _monthlyCard(context, s, spent);
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text(e.toString())),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.main,
-        onPressed: () => _showAddBudgetDialog(context, ref),
+        onPressed: () => _showAddBudgetDialog(context),
         child: const Icon(Icons.add, color: Colors.black),
       ),
     );
   }
 
-  Widget _buildBudgetCard(
-    BuildContext context,
-    Budget budget,
-    dynamic category,
-    double actual,
-  ) {
-    final progress = (actual / budget.limitAmount).clamp(0.0, 1.0);
-    final isOverBudget = actual > budget.limitAmount;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.main.withOpacity(0.1),
-                  child: Icon(category.icon, color: AppColors.main),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      Text(
-                        "Limit: \$${budget.limitAmount.toStringAsFixed(0)}",
-                        style: const TextStyle(color: AppColors.grey),
-                      ),
-                    ],
+  Widget _monthlyCard(BuildContext context, MonthlySummary s, double spent) {
+    final progress = (spent / s.totalLimit).clamp(0.0, 1.0);
+    final date = DateTime(s.year, s.month);
+    return GestureDetector(
+      onTap: () => context.push('/budget-detail', extra: s),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    DateFormat('MMMM yyyy').format(date),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                Text(
-                  "\$${(budget.limitAmount - actual).toStringAsFixed(0)} left",
-                  style: TextStyle(
-                    color: isOverBudget ? AppColors.red : AppColors.green,
-                    fontWeight: FontWeight.bold,
+                  Text(
+                    "${s.categoryCount} Categories",
+                    style: const TextStyle(color: AppColors.main, fontSize: 12),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppColors.grey.withOpacity(0.1),
-              color: isOverBudget ? AppColors.red : AppColors.main,
-              borderRadius: BorderRadius.circular(10),
-              minHeight: 8,
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 15),
+              LinearProgressIndicator(
+                value: progress,
+                backgroundColor: AppColors.grey.withOpacity(0.1),
+                color: spent > s.totalLimit ? AppColors.red : AppColors.main,
+                minHeight: 10,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _info("Limit", CurrencyFormatter.format(s.totalLimit)),
+                  _info("Spent", CurrencyFormatter.format(spent)),
+                  _info(
+                    "Left",
+                    CurrencyFormatter.format(s.totalLimit - spent),
+                    color: AppColors.green,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _showAddBudgetDialog(BuildContext context, WidgetRef ref) {
-    final amountController = TextEditingController();
-    String? selectedCategoryId;
+  Widget _info(String l, String v, {Color? color}) => Column(
+    children: [
+      Text(l, style: const TextStyle(color: AppColors.grey, fontSize: 11)),
+      Text(
+        v,
+        style: TextStyle(fontWeight: FontWeight.bold, color: color),
+      ),
+    ],
+  );
 
-    // Kita hanya ingin membatasi pengeluaran (Expense)
-    final categories =
-        ref
-            .read(categoriesStreamProvider)
-            .value
-            ?.where((c) => c.type == CategoryType.expense)
-            .toList() ??
-        [];
-
+  void _showAddBudgetDialog(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Set Category Budget",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
-
-              // Pilih Kategori
-              const Text(
-                "Select Category",
-                style: TextStyle(color: AppColors.grey, fontSize: 12),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                children: categories
-                    .map(
-                      (c) => ChoiceChip(
-                        avatar: Icon(
-                          c.icon,
-                          size: 16,
-                          color: selectedCategoryId == c.id
-                              ? Colors.black
-                              : AppColors.main,
-                        ),
-                        label: Text(c.name),
-                        selected: selectedCategoryId == c.id,
-                        onSelected: (val) =>
-                            setModalState(() => selectedCategoryId = c.id),
-                      ),
-                    )
-                    .toList(),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Input Limit
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Monthly Limit Amount",
-                  prefixText: "\$ ",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.main,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () async {
-                    if (selectedCategoryId != null &&
-                        amountController.text.isNotEmpty) {
-                      await ref
-                          .read(budgetNotifierProvider.notifier)
-                          .saveBudget(
-                            categoryId: selectedCategoryId!,
-                            limit: double.parse(amountController.text),
-                          );
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  },
-                  child: const Text(
-                    "Save Budget",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
+      builder: (context) => const AddBudgetModal(),
     );
   }
 
@@ -259,7 +171,7 @@ class BudgetPage extends ConsumerWidget {
             style: TextStyle(color: AppColors.grey),
           ),
           TextButton(
-            onPressed: () => _showAddBudgetDialog(context, ref),
+            onPressed: () => _showAddBudgetDialog(context),
             child: const Text("Create your first budget"),
           ),
         ],

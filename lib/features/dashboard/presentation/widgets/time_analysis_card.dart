@@ -1,3 +1,4 @@
+import 'package:finance_management/core/shared/widgets/custom_chip_filter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
 import 'package:intl/intl.dart';
+
+enum AnalysisPeriod { daily, weekly, monthly }
 
 class TimeAnalysisCard extends ConsumerStatefulWidget {
   const TimeAnalysisCard({super.key});
@@ -14,11 +17,11 @@ class TimeAnalysisCard extends ConsumerStatefulWidget {
 }
 
 class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
-  String selectedPeriod = 'Weekly';
+  // Ganti String ke Enum
+  AnalysisPeriod selectedPeriod = AnalysisPeriod.weekly;
 
   @override
   Widget build(BuildContext context) {
-    // ref tersedia otomatis di sini
     final transactionsAsync = ref.watch(transactionsStreamProvider);
 
     return Card(
@@ -28,45 +31,89 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildTabSelector(), // Panggil tanpa ref
-            const SizedBox(height: 25),
-            Row(
-              children: [
-                _buildLegendItem("Income", AppColors.green),
-                const SizedBox(width: 20),
-                _buildLegendItem("Spending", AppColors.red),
-              ],
+            // IMPLEMENTASI SHARED WIDGET
+            CustomChipFilter<AnalysisPeriod>(
+              values: AnalysisPeriod.values,
+              selectedValue: selectedPeriod,
+              labelBuilder: (period) =>
+                  period.name, // Mengambil 'daily', 'weekly', dll
+              onSelected: (period) {
+                setState(() => selectedPeriod = period);
+              },
             ),
             const SizedBox(height: 20),
+
             transactionsAsync.when(
               loading: () => const SizedBox(
                 height: 200,
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (err, _) => Center(child: Text("Error: $err")),
+              // ... inside transactionsAsync.when data: (transactions) ...
               data: (transactions) {
                 final chartData = _processTransactionData(transactions);
+
+                // Cari nilai tertinggi untuk skala sumbu Y
+                final maxIncome = chartData.incomeSpots
+                    .map((e) => e.y)
+                    .fold(0.0, (a, b) => a > b ? a : b);
+                final maxExpense = chartData.expenseSpots
+                    .map((e) => e.y)
+                    .fold(0.0, (a, b) => a > b ? a : b);
+                final maxY = (maxIncome > maxExpense ? maxIncome : maxExpense);
+
                 return Column(
                   children: [
-                    SizedBox(
-                      height: 200,
-                      child: LineChart(
-                        LineChartData(
-                          gridData: const FlGridData(show: false),
-                          titlesData: const FlTitlesData(show: false),
-                          borderData: FlBorderData(show: false),
-                          lineBarsData: [
-                            _buildLineData(
-                              color: AppColors.green,
-                              spots: chartData.incomeSpots,
+                    _buildTopLegend(
+                      chartData,
+                    ), // Legend dengan nominal (seperti request sebelumnya)
+                    const SizedBox(height: 25),
+                    Row(
+                      children: [
+                        // SUMBU Y
+                        _buildYAxisLabels(maxY),
+                        const SizedBox(width: 10),
+                        // CHART
+                        Expanded(
+                          child: SizedBox(
+                            height: 200,
+                            child: LineChart(
+                              LineChartData(
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: false,
+                                  getDrawingHorizontalLine: (value) => FlLine(
+                                    color: AppColors.white.withValues(
+                                      alpha: 0.05,
+                                    ),
+                                    strokeWidth: 1,
+                                  ),
+                                ),
+                                titlesData: const FlTitlesData(show: false),
+                                lineTouchData: const LineTouchData(
+                                  enabled: true,
+                                ),
+                                borderData: FlBorderData(show: false),
+                                // Atur skala Y agar konsisten dengan label
+                                minY: 0,
+                                maxY: maxY == 0
+                                    ? 100
+                                    : maxY * 1.2, // Kasih margin 20% di atas
+                                lineBarsData: [
+                                  _buildLineData(
+                                    color: AppColors.green,
+                                    spots: chartData.incomeSpots,
+                                  ),
+                                  _buildLineData(
+                                    color: AppColors.red,
+                                    spots: chartData.expenseSpots,
+                                  ),
+                                ],
+                              ),
                             ),
-                            _buildLineData(
-                              color: AppColors.red,
-                              spots: chartData.expenseSpots,
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                     _buildXAxisLabels(chartData.labels),
@@ -80,75 +127,49 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     );
   }
 
-  // UI HELPERS - Pastikan tidak ada (WidgetRef ref) di parameter fungsi ini
-  Widget _buildTabSelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: ['Daily', 'Weekly', 'Monthly'].map((period) {
-        final isSelected = selectedPeriod == period;
-        return GestureDetector(
-          onTap: () => setState(() => selectedPeriod = period),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.main : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              period,
-              style: TextStyle(
-                color: isSelected ? Colors.black : AppColors.grey,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // LOGIKA PEMPROSESAN DATA
+  // --- LOGIKA PEMPROSESAN DATA DENGAN ENUM ---
   _ChartProcessedData _processTransactionData(List<Transaction> transactions) {
     List<FlSpot> incomeSpots = [];
     List<FlSpot> expenseSpots = [];
     List<String> labels = [];
 
     DateTime now = DateTime.now();
-    int iterations = selectedPeriod == 'Daily'
+
+    // Sesuaikan iterasi dengan Enum
+    int iterations = selectedPeriod == AnalysisPeriod.daily
         ? 24
-        : (selectedPeriod == 'Weekly' ? 7 : 12);
+        : (selectedPeriod == AnalysisPeriod.weekly ? 7 : 12);
 
     for (int i = 0; i < iterations; i++) {
       double totalIncome = 0;
       double totalExpense = 0;
-      DateTime targetDate;
       String label = "";
 
-      if (selectedPeriod == 'Daily') {
-        targetDate = DateTime(now.year, now.month, now.day, i);
+      if (selectedPeriod == AnalysisPeriod.daily) {
         label = "$i:00";
         for (var tx in transactions) {
-          if (tx.date.day == now.day && tx.date.hour == i) {
+          if (tx.date.day == now.day &&
+              tx.date.month == now.month &&
+              tx.date.year == now.year &&
+              tx.date.hour == i) {
             tx.type == TransactionType.income
                 ? totalIncome += tx.amount
                 : totalExpense += tx.amount;
           }
         }
-      } else if (selectedPeriod == 'Weekly') {
-        // 7 Hari terakhir
-        targetDate = now.subtract(Duration(days: 6 - i));
+      } else if (selectedPeriod == AnalysisPeriod.weekly) {
+        DateTime targetDate = now.subtract(Duration(days: 6 - i));
         label = DateFormat('E').format(targetDate);
         for (var tx in transactions) {
           if (tx.date.day == targetDate.day &&
-              tx.date.month == targetDate.month) {
+              tx.date.month == targetDate.month &&
+              tx.date.year == targetDate.year) {
             tx.type == TransactionType.income
                 ? totalIncome += tx.amount
                 : totalExpense += tx.amount;
           }
         }
       } else {
-        // 12 Bulan terakhir
         int month = (now.month - (11 - i));
         int year = now.year;
         if (month <= 0) {
@@ -173,14 +194,48 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     return _ChartProcessedData(incomeSpots, expenseSpots, labels);
   }
 
+  Widget _buildYAxisLabels(double maxY) {
+    // Jika tidak ada data, tampilkan range default
+    final effectiveMax = maxY == 0 ? 100.0 : maxY;
+
+    // Buat 5 tingkatan label (0%, 25%, 50%, 75%, 100%)
+    return SizedBox(
+      height: 200,
+      width: 40, // Lebar area label
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: List.generate(5, (index) {
+          // Hitung nilai per baris (dibalik karena Column mulai dari atas)
+          final value = effectiveMax - (effectiveMax / 4 * index);
+
+          return Text(
+            _formatShortAmount(value),
+            style: const TextStyle(color: AppColors.grey, fontSize: 9),
+          );
+        }),
+      ),
+    );
+  }
+
+  // Helper untuk menyingkat angka (misal 1.000.000 jadi 1M atau 1jt)
+  String _formatShortAmount(double value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)}K';
+    }
+    return value.toStringAsFixed(0);
+  }
+
   Widget _buildXAxisLabels(List<String> labels) {
     // Ambil beberapa label saja agar tidak penuh (misal: tiap 3 jam untuk daily)
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: labels.asMap().entries.map((e) {
         bool show =
-            selectedPeriod == 'Weekly' ||
-            e.key % (selectedPeriod == 'Daily' ? 4 : 2) == 0;
+            selectedPeriod == AnalysisPeriod.weekly ||
+            e.key % (selectedPeriod == AnalysisPeriod.daily ? 4 : 2) == 0;
         return Text(
           show ? e.value : "",
           style: const TextStyle(color: AppColors.grey, fontSize: 10),
@@ -210,19 +265,42 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildTopLegend(_ChartProcessedData data) {
+    final totalIn = data.incomeSpots.fold(0.0, (sum, spot) => sum + spot.y);
+    final totalOut = data.expenseSpots.fold(0.0, (sum, spot) => sum + spot.y);
+
     return Row(
       children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        _buildLegendItem("Income", AppColors.green, amount: totalIn),
+        const SizedBox(width: 20),
+        _buildLegendItem("Spending", AppColors.red, amount: totalOut),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color, {double? amount}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(color: AppColors.grey, fontSize: 12),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(color: AppColors.grey, fontSize: 12),
-        ),
+        if (amount != null)
+          Text(
+            NumberFormat.compactSimpleCurrency(locale: 'en_US').format(amount),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
       ],
     );
   }

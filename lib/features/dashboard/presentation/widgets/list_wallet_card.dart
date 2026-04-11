@@ -3,6 +3,7 @@ import 'package:finance_management/features/wallet/presentation/providers/wallet
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:finance_management/core/utils/currency_formatter.dart'; // Gunakan formatter kita
 
 class ListWalletCard extends ConsumerWidget {
   const ListWalletCard({super.key});
@@ -12,12 +13,11 @@ class ListWalletCard extends ConsumerWidget {
     final walletsAsync = ref.watch(walletsStreamProvider);
 
     return SizedBox(
-      height: 170, // Sedikit disesuaikan
+      height: 170,
       child: walletsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text("Error: $err")),
         data: (wallets) {
-          // Jika kosong, tampilkan hanya tombol tambah
           if (wallets.isEmpty) {
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -25,15 +25,20 @@ class ListWalletCard extends ConsumerWidget {
             );
           }
 
-          // Jika ada data, tampilkan list + opsi tambah di paling kanan
           return ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 15),
-            itemCount: wallets.length + 1, // +1 untuk kartu "Add New"
+            itemCount: wallets.length + 1,
             itemBuilder: (context, index) {
               if (index < wallets.length) {
                 final wallet = wallets[index];
-                return _buildSquareCard(context, wallet.name, wallet.balance);
+                // Kirim iconCode sebagai int
+                return _buildSquareCard(
+                  context,
+                  wallet.name,
+                  wallet.balance,
+                  wallet.iconCode,
+                );
               } else {
                 return _buildAddWalletCard(context);
               }
@@ -44,8 +49,12 @@ class ListWalletCard extends ConsumerWidget {
     );
   }
 
-  // Widget Kartu Wallet Real
-  Widget _buildSquareCard(BuildContext context, String name, double balance) {
+  Widget _buildSquareCard(
+    BuildContext context,
+    String name,
+    double balance,
+    int iconCode,
+  ) {
     return Container(
       width: 150,
       margin: const EdgeInsets.only(right: 15),
@@ -60,10 +69,11 @@ class ListWalletCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               backgroundColor: AppColors.backgroundColor,
               child: Icon(
-                Icons.account_balance_wallet,
+                // PERBAIKAN UTAMA: Bungkus int iconCode ke dalam IconData
+                IconData(iconCode, fontFamily: 'MaterialIcons'),
                 color: AppColors.main,
                 size: 20,
               ),
@@ -78,7 +88,8 @@ class ListWalletCard extends ConsumerWidget {
                   style: const TextStyle(color: AppColors.grey, fontSize: 13),
                 ),
                 Text(
-                  "\$${balance.toStringAsFixed(0)}",
+                  // Gunakan CurrencyFormatter agar konsisten
+                  CurrencyFormatter.format(balance),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 20,
@@ -93,11 +104,9 @@ class ListWalletCard extends ConsumerWidget {
     );
   }
 
-  // Widget Tombol "Add New Wallet"
   Widget _buildAddWalletCard(BuildContext context) {
     return GestureDetector(
-      onTap: () =>
-          context.push('/wallets'), // Arahkan ke halaman manajemen wallet
+      onTap: () => context.push('/wallets'),
       child: Container(
         width: 150,
         margin: const EdgeInsets.only(right: 15),
@@ -106,8 +115,7 @@ class ListWalletCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: AppColors.main.withOpacity(0.5),
-            style: BorderStyle
-                .solid, // Bisa diganti Dash Border jika pakai library tambahan
+            style: BorderStyle.solid,
           ),
         ),
         child: const Column(

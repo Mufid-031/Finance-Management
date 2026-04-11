@@ -5,6 +5,7 @@ import 'package:finance_management/features/budget/data/datasource/budget_firest
 import 'package:finance_management/features/budget/data/repository/budget_repository.dart';
 import 'package:finance_management/features/budget/data/repository/budget_repository_impl.dart';
 import 'package:finance_management/features/budget/domain/budget.dart';
+import 'package:finance_management/features/budget/domain/monthly_summary.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_notifier.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,9 +25,23 @@ final budgetNotifierProvider =
       return BudgetNotifier(ref.watch(budgetServiceProvider), ref);
     });
 
+
 // Stream Provider
-final budgetsStreamProvider = StreamProvider<List<Budget>>((ref) {
+final monthlySummariesStreamProvider = StreamProvider<List<MonthlySummary>>((
+  ref,
+) {
   final user = ref.watch(authNotifierProvider).user;
-  if (user == null) return const Stream.empty();
-  return ref.watch(budgetServiceProvider).getBudgets(user.id);
+  return user == null
+      ? Stream.value([])
+      : ref.watch(budgetServiceProvider).getSummaries(user.id);
+});
+
+final budgetDetailsProvider = StreamProvider.family<List<Budget>, DateTime>((
+  ref,
+  date,
+) {
+  final user = ref.watch(authNotifierProvider).user!;
+  return ref
+      .watch(budgetServiceProvider)
+      .getBudgetsByMonth(user.id, date.month, date.year);
 });

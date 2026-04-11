@@ -2,8 +2,11 @@ import 'package:finance_management/features/auth/presentation/pages/login_page.d
 import 'package:finance_management/features/auth/presentation/pages/register_page.dart';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/app/presentation/pages/main_page.dart';
+import 'package:finance_management/features/budget/domain/monthly_summary.dart';
+import 'package:finance_management/features/budget/presentation/pages/budget_detail_page.dart';
 import 'package:finance_management/features/budget/presentation/pages/budget_page.dart';
 import 'package:finance_management/features/category/presentation/pages/category_page.dart';
+import 'package:finance_management/features/transaction/presentation/pages/transaction_page.dart';
 import 'package:finance_management/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +54,17 @@ final goRouterProvider = Provider((ref) {
       GoRoute(
         path: '/budgets',
         builder: (context, state) => const BudgetPage(),
+      ),
+      GoRoute(
+        path: '/budget-detail',
+        builder: (context, state) {
+          final summary = state.extra as MonthlySummary;
+          return BudgetDetailPage(summary: summary);
+        },
+      ),
+      GoRoute(
+        path: '/transactions',
+        builder: (context, state) => const TransactionPage(),
       ),
     ],
   );

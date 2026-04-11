@@ -1,37 +1,62 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BudgetFirestoreDatasource {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Stream<List<Map<String, dynamic>>> watchBudgets(String userId) {
-    return _firestore
+  // Watch ringkasan bulanan
+  Stream<List<Map<String, dynamic>>> watchSummaries(String userId) {
+    return _db
+        .collection('users')
+        .doc(userId)
+        .collection('monthly_summaries')
+        .orderBy('year', descending: true)
+        .orderBy('month', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+  }
+
+  // Watch detail kategori di bulan tertentu
+  Stream<List<Map<String, dynamic>>> watchBudgets(String userId, int m, int y) {
+    return _db
         .collection('users')
         .doc(userId)
         .collection('budgets')
+        .where('month', isEqualTo: m)
+        .where('year', isEqualTo: y)
         .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList(),
-        );
+        .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
   }
 
-  Future<void> saveBudget(
+  Future<void> saveBudgetWithSummary(
     String userId,
-    Map<String, dynamic> data, {
-    String? id,
-  }) async {
-    final ref = _firestore
+    Map<String, dynamic> budgetData,
+    Map<String, dynamic> summaryData,
+    String summaryId,
+  ) async {
+    final batch = _db.batch();
+
+    // 1. Dokumen Budget Kategori
+    final budgetRef = _db
         .collection('users')
         .doc(userId)
-        .collection('budgets');
-    if (id != null) {
-      await ref.doc(id).update(data);
-    } else {
-      await ref.add(data);
-    }
-  }
+        .collection('budgets')
+        .doc();
+    batch.set(budgetRef, budgetData);
 
-  Future<void> deleteBudget(String budgetId) async {
-    await _firestore.collection('budgets').doc(budgetId).delete();
+    // 2. Dokumen Monthly Summary (Update total limit menggunakan Increment)
+    final summaryRef = _db
+        .collection('users')
+        .doc(userId)
+        .collection('monthly_summaries')
+        .doc(summaryId);
+
+    batch.set(summaryRef, {
+      'month': summaryData['month'],
+      'year': summaryData['year'],
+      'totalLimit': FieldValue.increment(summaryData['totalLimit']),
+      'categoryCount': FieldValue.increment(1),
+    }, SetOptions(merge: true));
+
+    await batch.commit();
   }
 }

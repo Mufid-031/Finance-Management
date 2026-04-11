@@ -1,4 +1,5 @@
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/core/utils/error_utils.dart';
 import 'package:finance_management/features/auth/presentation/widgets/auth_button.dart';
 import 'package:finance_management/features/auth/presentation/widgets/auth_footer.dart';
 import 'package:finance_management/features/auth/presentation/widgets/auth_header.dart';
@@ -21,15 +22,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Di dalam build() LoginPage
     ref.listen(authNotifierProvider, (previous, next) {
       if (next.user != null) {
         context.go('/main');
       }
 
-      if (next.errorMessage != null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.errorMessage!)));
+      // Gunakan Utility yang sudah kita buat
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ErrorUtils.showError(context, next.errorMessage!);
+
+        // Opsional: Reset error di notifier agar tidak muncul dua kali saat rebuild
+        ref.read(authNotifierProvider.notifier).clearError();
       }
     });
 

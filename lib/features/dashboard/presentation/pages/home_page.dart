@@ -17,12 +17,11 @@ class HomePage extends ConsumerWidget {
     final walletAsync = ref.watch(walletsStreamProvider);
     final totalBalance = ref.watch(totalBalanceProvider);
 
-    // Ambil warna background dari tema aktif
     final themeBackground = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
       backgroundColor:
-          themeBackground, // GUNAKAN INI, jangan AppColors.backgroundColor
+          themeBackground,
       body: walletAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text("Error: $err")),
@@ -32,15 +31,15 @@ class HomePage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               BalanceCard(balance: totalBalance),
-              const InfoCard(),
-              const SizedBox(height: 15),
+              // const InfoCard(),
+              // const SizedBox(height: 15),
               const ListWalletCard(),
               const SizedBox(height: 15),
               const QuickActions(),
               const SizedBox(height: 15),
               const RecentTransactions(),
-              const SizedBox(height: 15),
-              const MonthlyBudgetCard(),
+              // const SizedBox(height: 15),
+              // const MonthlyBudgetCard(),
               const SizedBox(height: 15),
               const TimeAnalysisCard(),
               const SizedBox(height: 15),

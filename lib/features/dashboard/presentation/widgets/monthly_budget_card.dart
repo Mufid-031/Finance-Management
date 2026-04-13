@@ -54,14 +54,14 @@ class MonthlyBudgetCard extends StatelessWidget {
                         startDegreeOffset: -90,
                         sections: [
                           PieChartSectionData(
-                            value: 70, // Persentase Terpakai
+                            value: 70,
                             color: AppColors.main,
                             radius: 20,
                             showTitle: false,
                           ),
                           PieChartSectionData(
                             value: 30, // Sisa
-                            color: AppColors.grey.withOpacity(0.2),
+                            color: AppColors.grey.withValues(alpha: 0.2),
                             radius: 20,
                             showTitle: false,
                           ),

@@ -6,6 +6,14 @@ class AuthService {
 
   AuthService(this._repository);
 
+  Future<User> loginWithGoogle() {
+    return _repository.loginWithGoogle();
+  }
+
+  Stream<User?> authStateChanges() {
+    return _repository.authStateChanges();
+  }
+
   Future<User> login(String email, String password) {
     return _repository.login(email, password);
   }

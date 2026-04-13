@@ -3,6 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 class FirebaseAuthDatasource {
   final fb.FirebaseAuth _auth = fb.FirebaseAuth.instance;
 
+  Future<fb.UserCredential> loginWithGoogle() async {
+    final googleAuthProvider = fb.GoogleAuthProvider();
+    googleAuthProvider.addScope('email');
+    return await _auth.signInWithProvider(googleAuthProvider);
+  }
+
+  Stream<fb.User?> authStateChanges() => _auth.authStateChanges();
+
   Future<fb.UserCredential> login(String email, String password) async {
     return await _auth.signInWithEmailAndPassword(
       email: email,

@@ -11,7 +11,6 @@ class Failure {
 class AuthFailure extends Failure {
   AuthFailure(super.message, {super.code});
 
-  // Factory untuk memetakan error code Firebase ke bahasa manusia
   factory AuthFailure.fromFirebase(String code) {
     switch (code) {
       case 'user-not-found':

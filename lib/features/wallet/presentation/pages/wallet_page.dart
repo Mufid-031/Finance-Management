@@ -1,3 +1,4 @@
+import 'package:finance_management/core/shared/widgets/confirm_dialog.dart';
 import 'package:finance_management/core/shared/widgets/empty_state_widget.dart';
 import 'package:finance_management/features/wallet/domain/wallet.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
@@ -45,7 +46,7 @@ class WalletPage extends ConsumerWidget {
                     vertical: 8,
                   ),
                   leading: CircleAvatar(
-                    backgroundColor: AppColors.main.withOpacity(0.1),
+                    backgroundColor: AppColors.main.withValues(alpha: 0.1),
                     child: Icon(
                       IconData(wallet.iconCode, fontFamily: 'MaterialIcons'),
                       color: AppColors.main,
@@ -75,7 +76,8 @@ class WalletPage extends ConsumerWidget {
                           Icons.delete_outline,
                           color: AppColors.red,
                         ),
-                        onPressed: () => _confirmDelete(context, ref, wallet),
+                        onPressed: () =>
+                            _showDeleteConfirmation(context, ref, wallet),
                       ),
                     ],
                   ),
@@ -105,28 +107,17 @@ class WalletPage extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, Wallet wallet) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Wallet"),
-        content: Text("Are you sure you want to delete ${wallet.name}?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              await ref
-                  .read(walletNotifierProvider.notifier)
-                  .deleteWallet(wallet.id);
-              if (context.mounted) Navigator.pop(context);
-            },
-            child: const Text("Delete", style: TextStyle(color: AppColors.red)),
-          ),
-        ],
-      ),
+  void _showDeleteConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+    Wallet wallet,
+  ) {
+    ConfirmDialog.show(
+      context,
+      title: "Delete Wallet",
+      message: "Are you sure you want to delete '${wallet.name}'?",
+      onConfirm: () =>
+          ref.read(walletNotifierProvider.notifier).deleteWallet(wallet.id),
     );
   }
 }

@@ -4,7 +4,7 @@ import 'package:finance_management/core/utils/string_extension.dart';
 import 'package:finance_management/features/category/domain/category.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Import ini
+import 'package:intl/intl.dart';
 
 class TransactionItemTile extends StatelessWidget {
   final Transaction tx;
@@ -19,8 +19,6 @@ class TransactionItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isExpense = tx.type == TransactionType.expense;
-
-    // Format tanggal yang user friendly
     final formattedDate = DateFormat('d MMM yyyy').format(tx.date);
 
     return Container(
@@ -56,7 +54,7 @@ class TransactionItemTile extends StatelessWidget {
             ),
           ),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end, // Rata kanan agar rapi
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 "${isExpense ? '-' : '+'} ${CurrencyFormatter.format(tx.amount)}",
@@ -67,7 +65,7 @@ class TransactionItemTile extends StatelessWidget {
                 ),
               ),
               Text(
-                formattedDate, // Gunakan hasil format intl
+                formattedDate,
                 style: const TextStyle(color: AppColors.grey, fontSize: 11),
               ),
             ],

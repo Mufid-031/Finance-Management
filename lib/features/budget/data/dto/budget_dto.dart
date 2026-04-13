@@ -1,50 +1,50 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/budget.dart';
+import 'package:finance_management/features/budget/domain/budget.dart';
 
 class BudgetDTO {
   final String id;
   final String categoryId;
-  final String userId;
+  final String monthlySummaryId;
   final double limitAmount;
-  final DateTime startDate;
-  final DateTime endDate;
+  final double spentAmount; // WAJIB ADA agar budget bisa berkurang
 
   BudgetDTO({
     required this.id,
     required this.categoryId,
-    required this.userId,
+    required this.monthlySummaryId,
     required this.limitAmount,
-    required this.startDate,
-    required this.endDate,
+    this.spentAmount = 0.0, // Default 0.0
   });
 
-  factory BudgetDTO.fromMap(String id, Map<String, dynamic> map) {
-    return BudgetDTO(
-      id: id,
-      categoryId: map['categoryId'] ?? '',
-      userId: map['userId'] ?? '',
-      limitAmount: (map['limitAmount'] ?? 0.0).toDouble(),
-      startDate: (map['startDate'] as Timestamp).toDate(),
-      endDate: (map['endDate'] as Timestamp).toDate(),
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'categoryId': categoryId,
-      'userId': userId,
-      'limitAmount': limitAmount,
-      'startDate': Timestamp.fromDate(startDate),
-      'endDate': Timestamp.fromDate(endDate),
-    };
-  }
-
+  // Konversi ke Objek Domain
   Budget toDomain() => Budget(
     id: id,
     categoryId: categoryId,
-    userId: userId,
+    monthlySummaryId: monthlySummaryId,
     limitAmount: limitAmount,
-    startDate: startDate,
-    endDate: endDate,
+    spentAmount: spentAmount,
+  );
+
+  factory BudgetDTO.fromMap(String id, Map<String, dynamic> map) => BudgetDTO(
+    id: id,
+    categoryId: map['categoryId'] ?? '',
+    monthlySummaryId: map['monthlySummaryId'] ?? '',
+    limitAmount: (map['limitAmount'] as num).toDouble(),
+    spentAmount: (map['spentAmount'] as num? ?? 0.0).toDouble(),
+  );
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'categoryId': categoryId,
+    'monthlySummaryId': monthlySummaryId,
+    'limitAmount': limitAmount,
+    'spentAmount': spentAmount, // Simpan ke Firestore
+  };
+
+  factory BudgetDTO.fromDomain(Budget domain) => BudgetDTO(
+    id: domain.id,
+    categoryId: domain.categoryId,
+    monthlySummaryId: domain.monthlySummaryId,
+    limitAmount: domain.limitAmount,
+    spentAmount: domain.spentAmount,
   );
 }

@@ -6,22 +6,18 @@ import 'package:finance_management/core/shared/widgets/transaction_item_tile.dar
 import 'package:finance_management/core/utils/date_formatter.dart';
 import 'package:finance_management/features/category/domain/category.dart';
 import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
-import 'package:finance_management/features/transaction/domain/transaction.dart';
-import 'package:finance_management/features/transaction/presentation/providers/transaction_filter_provider.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
-import 'package:flutter_riverpod/legacy.dart';
-
-// Provider search lokal
-final transactionSearchProvider = StateProvider<String>((ref) => "");
 
 class TransactionPage extends ConsumerWidget {
   const TransactionPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final filteredList = ref.watch(filteredTransactionsProvider);
+
     final transactionsAsync = ref.watch(transactionsStreamProvider);
     final selectedFilter = ref.watch(transactionFilterProvider);
     final searchQuery = ref.watch(transactionSearchProvider).toLowerCase();
@@ -58,7 +54,6 @@ class TransactionPage extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          // TAB FILTER (Income/Expense/All)
           CustomFilterTabs(
             labels: const ["ALL", "EXPENSE", "INCOME"],
             currentIndex: selectedFilter.index,
@@ -72,23 +67,6 @@ class TransactionPage extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text("Error: $err")),
               data: (transactions) {
-                // LOGIC FILTER: Search + Tab Filter (Batas 3 hari dihapus)
-                final filteredList = transactions.where((tx) {
-                  // Filter by Search Query
-                  final matchesSearch = tx.title.toLowerCase().contains(
-                    searchQuery,
-                  );
-
-                  // Filter by Tab
-                  bool matchesTab = true;
-                  if (selectedFilter == TransactionFilter.income) {
-                    matchesTab = tx.type == TransactionType.income;
-                  } else if (selectedFilter == TransactionFilter.spending) {
-                    matchesTab = tx.type == TransactionType.expense;
-                  }
-
-                  return matchesSearch && matchesTab;
-                }).toList();
 
                 if (filteredList.isEmpty) {
                   return EmptyStateWidget(

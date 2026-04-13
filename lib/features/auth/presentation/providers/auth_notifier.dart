@@ -12,6 +12,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this.service, this.ref) : super(AuthState());
 
+  // --- LOGIN WITH GOOGLE ---
+  Future<void> loginWithGoogle() async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      final user = await service.loginWithGoogle();
+      state = state.copyWith(user: user, isLoading: false);
+    } on FirebaseAuthException catch (e) {
+      final failure = AuthFailure.fromFirebase(e.code);
+      state = state.copyWith(isLoading: false, errorMessage: failure.message);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: "Gagal login dengan Google.",
+      );
+    }
+  }
+
   Future<void> login(String email, String password) async {
     if (email.isEmpty || password.isEmpty) {
       state = state.copyWith(errorMessage: "Email dan password wajib diisi");
@@ -23,7 +40,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final user = await service.login(email, password);
       state = state.copyWith(user: user, isLoading: false);
     } on FirebaseAuthException catch (e) {
-      // Gunakan factory yang kita buat tadi
       final failure = AuthFailure.fromFirebase(e.code);
       state = state.copyWith(isLoading: false, errorMessage: failure.message);
     } catch (e) {
@@ -35,26 +51,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> register(String email, String password) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
     try {
-      state = state.copyWith(isLoading: true);
       final user = await service.register(email, password);
 
-      // Kita butuh akses ke WalletService di sini
+      // Membuat wallet awal otomatis
       await ref.read(walletServiceProvider).createInitialWallet(user.id);
 
       state = state.copyWith(user: user, isLoading: false);
+    } on FirebaseAuthException catch (e) {
+      final failure = AuthFailure.fromFirebase(e.code);
+      state = state.copyWith(isLoading: false, errorMessage: failure.message);
     } catch (e) {
-      state = state.copyWith(isLoading: false);
-      rethrow;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: "Pendaftaran gagal.",
+      );
     }
   }
 
   Future<void> logout() async {
     await service.logout();
-    state = AuthState(user: null);
+    // Gunakan copyWith agar state lainnya tidak hilang, cukup user yang di-null-kan
+    state = state.copyWith(user: null, isLoading: false, errorMessage: null);
   }
 
-  void checkAuth() async {
+  void checkAuth() {
     final user = service.getCurrentUser();
     state = state.copyWith(user: user);
   }

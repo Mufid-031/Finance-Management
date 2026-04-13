@@ -1,5 +1,3 @@
-import 'package:finance_management/features/wallet/domain/wallet.dart';
-
 class WalletState {
   final bool isLoading;
   final String? errorMessage;

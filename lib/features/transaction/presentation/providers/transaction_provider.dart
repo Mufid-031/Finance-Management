@@ -4,36 +4,51 @@ import 'package:finance_management/features/transaction/data/datasource/transact
 import 'package:finance_management/features/transaction/data/repository/transaction_repository.dart';
 import 'package:finance_management/features/transaction/data/repository/transaction_repository_impl.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
+import 'package:finance_management/features/transaction/domain/transaction_filter_helper.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_notifier.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
-// 1. Datasource
 final transactionDatasourceProvider = Provider(
   (ref) => TransactionDatasource(),
 );
 
-// 2. Repository
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
   return TransactionRepositoryImpl(ref.watch(transactionDatasourceProvider));
 });
 
-// 3. Service
 final transactionServiceProvider = Provider((ref) {
   return TransactionService(ref.watch(transactionRepositoryProvider));
 });
 
-// 4. Notifier (Untuk Action Save)
 final transactionNotifierProvider =
     StateNotifierProvider<TransactionNotifier, TransactionState>((ref) {
       return TransactionNotifier(ref.watch(transactionServiceProvider), ref);
     });
 
-// 5. Stream (Untuk Tampilan Real-time di Home)
 final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
   final user = ref.watch(authNotifierProvider).user;
   if (user == null) return Stream.value([]);
 
   return ref.watch(transactionServiceProvider).getRecentTransactions(user.id);
+});
+
+enum TransactionFilter { all, spending, income }
+
+final transactionFilterProvider = StateProvider<TransactionFilter>(
+  (ref) => TransactionFilter.all,
+);
+
+final transactionSearchProvider = StateProvider<String>((ref) => "");
+
+final filteredTransactionsProvider = Provider<List<Transaction>>((ref) {
+  final transactions = ref.watch(transactionsStreamProvider).value ?? [];
+  final filter = ref.watch(transactionFilterProvider);
+  final searchQuery = ref.watch(transactionSearchProvider).toLowerCase();
+
+  return transactions.applyFilter(
+    selectedFilter: filter,
+    searchQuery: searchQuery,
+  );
 });

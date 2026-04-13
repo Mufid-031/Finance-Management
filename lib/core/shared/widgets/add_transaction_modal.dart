@@ -59,7 +59,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 height: 4,
                 margin: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.grey.withOpacity(0.3),
+                  color: AppColors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -70,7 +70,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             const SizedBox(height: 20),
 
-            // 1. Tipe Selector
             Row(
               children: [
                 _TypeButton(
@@ -96,7 +95,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             const SizedBox(height: 20),
 
-            // 2. Input Fields
             TextField(
               controller: amountController,
               keyboardType: TextInputType.number,
@@ -120,7 +118,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             const Divider(),
 
-            // 3. Wallet Selector
             const _SectionTitle("Source Wallet"),
             walletsAsync.when(
               data: (list) => SizedBox(
@@ -144,12 +141,11 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                 ),
               ),
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text("Error loading wallets"),
+              error: (_, _) => const Text("Error loading wallets"),
             ),
 
             const SizedBox(height: 20),
 
-            // 4. Category Selector
             const _SectionTitle("Category"),
             if (filteredCategories.isEmpty)
               const Text(
@@ -182,7 +178,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
             const SizedBox(height: 30),
 
-            // 5. Confirm Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -245,8 +240,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
   }
 }
 
-// --- Sub-widgets untuk menjaga kode tetap rapi ---
-
 class _SectionTitle extends StatelessWidget {
   final String title;
   const _SectionTitle(this.title);
@@ -291,7 +284,7 @@ class _TypeButton extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? AppColors.main
-                  : AppColors.grey.withOpacity(0.3),
+                  : AppColors.grey.withValues(alpha: 0.3),
             ),
           ),
           child: Center(

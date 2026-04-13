@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -45,54 +46,110 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AuthHeader(title: "Sign In", subtitle: "Sign in to your account"),
-              SizedBox(height: 20),
-              AuthTextField(
-                controller: emailController,
-                label: "Email",
-                hintText: 'Enter your email',
-              ),
-              SizedBox(height: 16),
-              AuthTextField(
-                controller: passwordController,
-                label: "Password",
-                hintText: 'Enter your password',
-                obscureText: true,
-              ),
-              SizedBox(height: 5),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {
-                    context.push('/forgot-password');
-                  },
-                  child: Text(
-                    "Forgot Password?",
-                    style: TextStyle(color: AppColors.main),
+          child: SingleChildScrollView(
+            // Tambahkan ini agar aman saat keyboard muncul
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AuthHeader(
+                  title: "Sign In",
+                  subtitle: "Sign in to your account",
+                ),
+                const SizedBox(height: 20),
+                AuthTextField(
+                  controller: emailController,
+                  label: "Email",
+                  hintText: 'Enter your email',
+                ),
+                const SizedBox(height: 16),
+                AuthTextField(
+                  controller: passwordController,
+                  label: "Password",
+                  hintText: 'Enter your password',
+                  obscureText: true,
+                ),
+                const SizedBox(height: 5),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push('/forgot-password'),
+                    child: const Text(
+                      "Forgot Password?",
+                      style: TextStyle(color: AppColors.main),
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 5),
-              AuthButton(
-                isLoading: state.isLoading,
-                text: "Login",
-                onPressed: () async {
-                  await notifier.login(
-                    emailController.text,
-                    passwordController.text,
-                  );
-                },
-              ),
-              AuthFooter(
-                text: "Don't have an account?",
-                actionText: "Sign Up",
-                onTap: () => context.push('/register'),
-              ),
-            ],
+                const SizedBox(height: 5),
+                AuthButton(
+                  isLoading: state.isLoading,
+                  text: "Login",
+                  onPressed: () async {
+                    await notifier.login(
+                      emailController.text,
+                      passwordController.text,
+                    );
+                  },
+                ),
+
+                // --- BAGIAN GOOGLE LOGIN ---
+                const SizedBox(height: 20),
+                _buildDivider(),
+                const SizedBox(height: 20),
+
+                _buildGoogleButton(state.isLoading, () async {
+                  await notifier.loginWithGoogle();
+                }),
+
+                // ---------------------------
+                AuthFooter(
+                  text: "Don't have an account?",
+                  actionText: "Sign Up",
+                  onTap: () => context.push('/register'),
+                ),
+              ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        const Expanded(child: Divider(color: AppColors.grey)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            "OR",
+            style: TextStyle(color: AppColors.grey, fontSize: 12),
+          ),
+        ),
+        const Expanded(child: Divider(color: AppColors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildGoogleButton(bool isLoading, VoidCallback onPressed) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          side: BorderSide(color: AppColors.white.withValues(alpha: 0.1)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        ),
+        onPressed: isLoading ? null : onPressed,
+        icon: SvgPicture.network(
+          'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg',
+          height: 20,
+          placeholderBuilder: (context) => const CircularProgressIndicator(),
+        ),
+        label: const Text(
+          "Continue with Google",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );

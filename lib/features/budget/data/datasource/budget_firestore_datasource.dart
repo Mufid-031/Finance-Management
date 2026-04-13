@@ -1,62 +1,70 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BudgetFirestoreDatasource {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Watch ringkasan bulanan
-  Stream<List<Map<String, dynamic>>> watchSummaries(String userId) {
-    return _db
+  CollectionReference _summaryRef(String userId) {
+    return _firestore
         .collection('users')
         .doc(userId)
-        .collection('monthly_summaries')
+        .collection('monthly_summaries');
+  }
+
+  Stream<DocumentSnapshot> getMonthlySummaryStream(
+    String userId,
+    String summaryId,
+  ) {
+    return _summaryRef(userId).doc(summaryId).snapshots();
+  }
+
+  Future<void> createMonthlySummary(String userId, Map<String, dynamic> data) {
+    return _summaryRef(userId).doc(data['id']).set(data);
+  }
+
+  Stream<QuerySnapshot> getBudgetsBySummary(
+    String userId,
+    String summaryId,
+    Map<String, dynamic> data,
+  ) {
+    return _summaryRef(userId).doc(summaryId).collection('budgets').snapshots();
+  }
+
+  Future<void> upsertBudget(
+    String userId,
+    String summaryId,
+    Map<String, dynamic> data,
+  ) {
+    return _summaryRef(userId)
+        .doc(summaryId)
+        .collection('budgets')
+        .doc(data['id'])
+        .set(data, SetOptions(merge: true));
+  }
+
+  Future<void> updateCategoryCount(
+    String userId,
+    String summaryId,
+    int change,
+  ) {
+    return _summaryRef(
+      userId,
+    ).doc(summaryId).update({'categoryCount': FieldValue.increment(change)});
+  }
+
+  Future<void> removeCategoryBudget(
+    String userId,
+    String summaryId,
+    String budgetId,
+  ) {
+    return _summaryRef(
+      userId,
+    ).doc(summaryId).collection('budgets').doc(budgetId).delete();
+  }
+
+  Stream<QuerySnapshot> getAllSummaries(String userId) {
+    return _summaryRef(userId)
         .orderBy('year', descending: true)
         .orderBy('month', descending: true)
-        .snapshots()
-        .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
-  }
-
-  // Watch detail kategori di bulan tertentu
-  Stream<List<Map<String, dynamic>>> watchBudgets(String userId, int m, int y) {
-    return _db
-        .collection('users')
-        .doc(userId)
-        .collection('budgets')
-        .where('month', isEqualTo: m)
-        .where('year', isEqualTo: y)
-        .snapshots()
-        .map((s) => s.docs.map((d) => {'id': d.id, ...d.data()}).toList());
-  }
-
-  Future<void> saveBudgetWithSummary(
-    String userId,
-    Map<String, dynamic> budgetData,
-    Map<String, dynamic> summaryData,
-    String summaryId,
-  ) async {
-    final batch = _db.batch();
-
-    // 1. Dokumen Budget Kategori
-    final budgetRef = _db
-        .collection('users')
-        .doc(userId)
-        .collection('budgets')
-        .doc();
-    batch.set(budgetRef, budgetData);
-
-    // 2. Dokumen Monthly Summary (Update total limit menggunakan Increment)
-    final summaryRef = _db
-        .collection('users')
-        .doc(userId)
-        .collection('monthly_summaries')
-        .doc(summaryId);
-
-    batch.set(summaryRef, {
-      'month': summaryData['month'],
-      'year': summaryData['year'],
-      'totalLimit': FieldValue.increment(summaryData['totalLimit']),
-      'categoryCount': FieldValue.increment(1),
-    }, SetOptions(merge: true));
-
-    await batch.commit();
+        .snapshots();
   }
 }

@@ -23,7 +23,7 @@ class DateSeparator extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Divider(
-              color: AppColors.grey.withOpacity(0.8),
+              color: AppColors.grey.withValues(alpha: 0.8),
               thickness: 1,
             ),
           ),

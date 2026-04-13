@@ -1,3 +1,4 @@
+import 'package:finance_management/core/shared/widgets/confirm_dialog.dart';
 import 'package:finance_management/core/shared/widgets/custom_filter_tabs.dart';
 import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
 import 'package:flutter/material.dart';
@@ -311,30 +312,13 @@ class _CategoryPageState extends ConsumerState<CategoryPage>
   }
 
   void _showDeleteConfirmation(BuildContext context, Category category) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Category"),
-        content: Text("Are you sure you want to delete '${category.name}'?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Cancel",
-              style: TextStyle(color: AppColors.grey),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              ref
-                  .read(categoryNotifierProvider.notifier)
-                  .deleteCategory(category.id);
-              Navigator.pop(context);
-            },
-            child: const Text("Delete", style: TextStyle(color: AppColors.red)),
-          ),
-        ],
-      ),
+    ConfirmDialog.show(
+      context,
+      title: "Delete Category",
+      message: "Are you sure you want to delete '${category.name}'?",
+      onConfirm: () => ref
+          .read(categoryNotifierProvider.notifier)
+          .deleteCategory(category.id),
     );
   }
-} // TUTUP KURUNG CLASS PALING AKHIR
+}

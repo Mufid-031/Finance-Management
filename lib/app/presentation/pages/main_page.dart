@@ -21,9 +21,9 @@ class _MainPageState extends ConsumerState<MainPage> {
 
   final pages = [
     const HomePage(),
-    const Center(child: Text("Analytics Page")), // Tab 2
-    const Center(child: Text("AI Assistant")), // Tab 3
-    const ProfilePage(), // Tab 4 (Profile/Settings)
+    const Center(child: Text("Analytics Page")),
+    const Center(child: Text("AI Assistant")),
+    const ProfilePage(),
   ];
 
   @override
@@ -33,7 +33,6 @@ class _MainPageState extends ConsumerState<MainPage> {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      // APP BAR DI PINDAH KE SINI
       appBar: _buildAppBar(context, user?.email),
       body: pages[index],
 
@@ -55,10 +54,8 @@ class _MainPageState extends ConsumerState<MainPage> {
         shape: const CircularNotchedRectangle(),
         notchMargin: 8,
         child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceAround, // Lebih rapi untuk 4 item
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            // HOME
             IconButton(
               onPressed: () => setState(() => index = 0),
               icon: Icon(
@@ -66,7 +63,6 @@ class _MainPageState extends ConsumerState<MainPage> {
                 color: index == 0 ? AppColors.main : AppColors.grey,
               ),
             ),
-            // ANALYTICS
             IconButton(
               onPressed: () => setState(() => index = 1),
               icon: Icon(
@@ -74,8 +70,7 @@ class _MainPageState extends ConsumerState<MainPage> {
                 color: index == 1 ? AppColors.main : AppColors.grey,
               ),
             ),
-            const SizedBox(width: 40), // Spasi untuk FloatingActionButton
-            // AI
+            const SizedBox(width: 40),
             IconButton(
               onPressed: () => setState(() => index = 2),
               icon: Icon(
@@ -83,7 +78,6 @@ class _MainPageState extends ConsumerState<MainPage> {
                 color: index == 2 ? AppColors.main : AppColors.grey,
               ),
             ),
-            // PROFILE / GRID
             IconButton(
               onPressed: () => setState(() => index = 3),
               icon: Icon(
@@ -97,8 +91,11 @@ class _MainPageState extends ConsumerState<MainPage> {
     );
   }
 
-  // APP BAR COMPONENT
   PreferredSizeWidget _buildAppBar(BuildContext context, String? email) {
+    final String initial = email != null && email.isNotEmpty
+        ? email[0].toUpperCase()
+        : 'U';
+
     final displayEmail = email?.split("@")[0] ?? 'User';
     final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final iconColor = Theme.of(context).colorScheme.onSurface;
@@ -106,11 +103,17 @@ class _MainPageState extends ConsumerState<MainPage> {
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      leading: const Padding(
-        padding: EdgeInsets.only(left: 15),
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 15),
         child: CircleAvatar(
-          backgroundImage: NetworkImage(
-            'https://ui-avatars.com/api/?name=User',
+          backgroundColor: AppColors.widgetColor,
+          child: Text(
+            initial,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
         ),
       ),
@@ -129,7 +132,6 @@ class _MainPageState extends ConsumerState<MainPage> {
         ],
       ),
       actions: [
-        // TOMBOL TOGGLE THEME (Sangat disarankan tetap ada untuk kemudahan akses)
         IconButton(
           onPressed: () {
             ref

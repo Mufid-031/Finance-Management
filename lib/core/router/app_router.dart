@@ -2,7 +2,7 @@ import 'package:finance_management/features/auth/presentation/pages/login_page.d
 import 'package:finance_management/features/auth/presentation/pages/register_page.dart';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/app/presentation/pages/main_page.dart';
-import 'package:finance_management/features/budget/domain/monthly_summary.dart';
+import 'package:finance_management/features/budget/domain/budget.dart';
 import 'package:finance_management/features/budget/presentation/pages/budget_detail_page.dart';
 import 'package:finance_management/features/budget/presentation/pages/budget_page.dart';
 import 'package:finance_management/features/category/presentation/pages/category_page.dart';
@@ -19,7 +19,6 @@ final goRouterProvider = Provider((ref) {
 
     redirect: (context, state) {
       final isLoggedIn = authState.user != null;
-      // final isLoggedIn = authState.user == null; // Login
 
       final isAuthRoute =
           state.matchedLocation == '/login' ||
@@ -57,9 +56,10 @@ final goRouterProvider = Provider((ref) {
       ),
       GoRoute(
         path: '/budget-detail',
+        name: 'budget-detail',
         builder: (context, state) {
-          final summary = state.extra as MonthlySummary;
-          return BudgetDetailPage(summary: summary);
+          final budget = state.extra as Budget;
+          return BudgetDetailPage(budget: budget);
         },
       ),
       GoRoute(

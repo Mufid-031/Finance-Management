@@ -13,13 +13,13 @@ class QuickActions extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround, // Lebih merata
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _actionIcon(
                 context,
                 Icons.category_outlined,
                 "Category",
-                AppColors.main, // Konsisten dengan brand color Anda
+                AppColors.main,
                 onTap: () => context.push('/categories'),
               ),
               _actionIcon(
@@ -36,11 +36,11 @@ class QuickActions extends StatelessWidget {
                 AppColors.orange,
                 onTap: () => context.push(
                   '/budgets',
-                ), // Pastikan path ini terdaftar di router
+                ),
               ),
               _actionIcon(
                 context,
-                Icons.analytics_outlined, // Berubah dari Bill ke Analytics
+                Icons.analytics_outlined,
                 "Reports",
                 AppColors.green,
                 onTap: () => context.push('/reports'),
@@ -67,9 +67,9 @@ class QuickActions extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(
               15,
-            ), // Ukuran touch target yang lebih baik
+            ),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Icon(icon, color: color, size: 26),

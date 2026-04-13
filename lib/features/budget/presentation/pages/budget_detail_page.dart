@@ -1,96 +1,172 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:finance_management/features/budget/domain/monthly_summary.dart';
-import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
+import 'package:finance_management/features/budget/domain/budget.dart';
 import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
-import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
-import 'package:finance_management/core/utils/currency_formatter.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
+import 'package:finance_management/core/shared/widgets/confirm_dialog.dart';
 
 class BudgetDetailPage extends ConsumerWidget {
-  final MonthlySummary summary;
-  const BudgetDetailPage({super.key, required this.summary});
+  final Budget budget;
+
+  const BudgetDetailPage({super.key, required this.budget});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Kita panggil detail kategori berdasarkan bulan & tahun dari summary
-    final targetDate = DateTime(summary.year, summary.month);
-    final categoryBudgetsAsync = ref.watch(budgetDetailsProvider(targetDate));
-    final categories = ref.watch(categoriesStreamProvider).value ?? [];
-    final transactions = ref.watch(transactionsStreamProvider).value ?? [];
+    final categoriesAsync = ref.watch(categoriesStreamProvider);
+
+    // SOLUSI: Ambil data budget terbaru dari provider berdasarkan ID
+    final budgetState = ref.watch(budgetNotifierProvider);
+    final latestBudget = budgetState.categoryBudgets.firstWhere(
+      (b) => b.id == budget.id,
+      orElse: () => budget, // Fallback ke data awal jika tidak ditemukan
+    );
 
     return Scaffold(
-      appBar: AppBar(title: Text("Detail: ${summary.month}/${summary.year}")),
-      body: categoryBudgetsAsync.when(
+      appBar: AppBar(
+        title: const Text("Budget Detail"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: AppColors.red),
+            onPressed: () => _showDeleteConfirm(context, ref),
+          ),
+        ],
+      ),
+      body: categoriesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text("Error: $err")),
-        data: (budgets) {
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: budgets.length,
-            itemBuilder: (context, index) {
-              final budget = budgets[index];
-              final category = categories.firstWhere(
-                (c) => c.id == budget.categoryId,
-                orElse: () => categories.first,
-              );
+        data: (categories) {
+          final category = categories.firstWhere(
+            (c) => c.id == latestBudget.categoryId,
+            orElse: () => categories.first,
+          );
 
-              // Hitung spending per kategori
-              final spent = transactions
-                  .where(
-                    (tx) =>
-                        tx.categoryId == budget.categoryId &&
-                        tx.date.month == summary.month &&
-                        tx.date.year == summary.year,
-                  )
-                  .fold(0.0, (sum, tx) => sum + tx.amount);
-
-              return _buildCategoryCard(context, budget, category, spent);
-            },
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(25),
+            child: Column(
+              children: [
+                // Gunakan latestBudget, bukan budget
+                _buildProgressHeader(category.name, latestBudget),
+                const SizedBox(height: 40),
+                _buildInfoSection(latestBudget),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildCategoryCard(
-    BuildContext context,
-    dynamic budget,
-    dynamic cat,
-    double spent,
-  ) {
-    final progress = (spent / budget.limitAmount).clamp(0.0, 1.0);
+  Widget _buildProgressHeader(String categoryName, Budget budget) {
+    final percent = budget.limitAmount > 0
+        ? (budget.spentAmount / budget.limitAmount)
+        : 0.0;
+    final isOverBudget = budget.spentAmount > budget.limitAmount;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          backgroundColor: AppColors.main.withOpacity(0.1),
-          child: Icon(cat.icon, color: AppColors.main),
-        ),
-        title: Text(
-          cat.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.center,
           children: [
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value: progress,
-              color: spent > budget.limitAmount
-                  ? AppColors.red
-                  : AppColors.main,
-              backgroundColor: AppColors.grey.withOpacity(0.1),
+            SizedBox(
+              width: 200,
+              height: 200,
+              child: CircularProgressIndicator(
+                value: percent > 1.0 ? 1.0 : percent,
+                strokeWidth: 15,
+                backgroundColor: AppColors.grey.withValues(alpha: 0.1),
+                color: isOverBudget ? AppColors.red : AppColors.main,
+                strokeCap: StrokeCap.round,
+              ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              "${CurrencyFormatter.format(spent)} of ${CurrencyFormatter.format(budget.limitAmount)}",
+            Column(
+              children: [
+                Text(
+                  "${(percent * 100).toStringAsFixed(0)}%",
+                  style: const TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text("Used", style: TextStyle(color: AppColors.grey)),
+              ],
             ),
           ],
         ),
+        const SizedBox(height: 25),
+        Text(
+          categoryName,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoSection(Budget budget) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.grey.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
       ),
+      child: Column(
+        children: [
+          _buildDetailRow(
+            "Monthly Limit",
+            "\$${budget.limitAmount.toStringAsFixed(2)}",
+          ),
+          const Divider(height: 30),
+          _buildDetailRow(
+            "Spent So Far",
+            "\$${budget.spentAmount.toStringAsFixed(2)}",
+            color: AppColors.red,
+          ),
+          const Divider(height: 30),
+          _buildDetailRow(
+            "Remaining",
+            "\$${budget.remaining.toStringAsFixed(2)}",
+            color: budget.remaining < 0 ? AppColors.red : AppColors.main,
+            isBold: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    Color? color,
+    bool isBold = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(color: AppColors.grey, fontSize: 16)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showDeleteConfirm(BuildContext context, WidgetRef ref) {
+    ConfirmDialog.show(
+      context,
+      title: "Remove Budget",
+      message:
+          "Are you sure you want to remove this category from your monthly budget?",
+      onConfirm: () async {
+        await ref
+            .read(budgetNotifierProvider.notifier)
+            .removeCategoryBudget(budget.monthlySummaryId, budget.id);
+        if (context.mounted) Navigator.pop(context);
+      },
     );
   }
 }

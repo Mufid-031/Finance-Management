@@ -2,12 +2,12 @@ import 'package:finance_management/core/shared/widgets/add_transaction_modal.dar
 import 'package:finance_management/core/shared/widgets/custom_chip_filter.dart';
 import 'package:finance_management/core/shared/widgets/date_separator.dart';
 import 'package:finance_management/core/shared/widgets/empty_state_widget.dart';
+import 'package:finance_management/core/shared/widgets/section_header.dart';
 import 'package:finance_management/core/shared/widgets/transaction_item_tile.dart';
 import 'package:finance_management/core/utils/date_formatter.dart';
 import 'package:finance_management/features/category/domain/category.dart';
 import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
-import 'package:finance_management/features/transaction/presentation/providers/transaction_filter_provider.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,18 +29,9 @@ class RecentTransactions extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Recent Transactions",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push("/transactions"),
-                    child: const Text("See All"),
-                  ),
-                ],
+              SectionHeader(
+                title: "Recent Transactions",
+                onPressed: () => context.push("/transactions"),
               ),
               const SizedBox(height: 15),
 
@@ -53,16 +44,10 @@ class RecentTransactions extends ConsumerWidget {
                 },
               ),
               const SizedBox(height: 15),
-
-              // LIST TRANSACTION DENGAN ASYNC DATA
               transactionsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, _) => Center(child: Text("Error: $err")),
-                // ... imports (AppDateFormatter, TransactionItemTile, DateSeparator, EmptyStateWidget)
-
-                // Di dalam data: (transactions)
                 data: (transactions) {
-                  // 1. Filter Logic (Tetap di sini karena spesifik kebutuhan Dashboard)
                   final now = DateTime.now();
                   final threeDaysAgo = DateTime(
                     now.year,
@@ -89,7 +74,6 @@ class RecentTransactions extends ConsumerWidget {
                     return isRecent && matchesTab;
                   }).toList();
 
-                  // 2. Tampilan UI
                   if (filteredList.isEmpty) {
                     return EmptyStateWidget(
                       message: "No transactions in the last 3 days",
@@ -108,7 +92,6 @@ class RecentTransactions extends ConsumerWidget {
                       final categories =
                           ref.watch(categoriesStreamProvider).value ?? [];
 
-                      // Cari category
                       final category = categories.firstWhere(
                         (c) => c.id == tx.categoryId,
                         orElse: () => Category(
@@ -119,7 +102,6 @@ class RecentTransactions extends ConsumerWidget {
                         ),
                       );
 
-                      // Header Tanggal Logic
                       final dateLabel = DateFormatter.getNiceDateLabel(tx.date);
                       bool showHeader =
                           index == 0 ||

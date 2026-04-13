@@ -23,7 +23,6 @@ class BalanceCard extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          // ... sisanya
         ],
       ),
     );

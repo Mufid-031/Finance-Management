@@ -1,17 +1,12 @@
 import 'package:finance_management/features/budget/domain/budget.dart';
-import 'package:finance_management/features/budget/domain/monthly_summary.dart'; // <--- Import ini
+import 'package:finance_management/features/budget/domain/monthly_summary.dart';
 
 abstract class BudgetRepository {
-  Stream<List<MonthlySummary>> watchMonthlySummaries(String userId);
-
-  Stream<List<Budget>> watchBudgetsByMonth(String userId, int month, int year);
-
-  Future<void> setBudget(Budget budget);
-
-  Future<void> deleteBudget(
-    String userId,
-    String budgetId,
-    int month,
-    int year,
-  );
+  Stream<MonthlySummary?> watchMonthlySummary(String userId, String summaryId);
+  Stream<List<Budget>> watchCategoryBudgets(String userId, String summaryId);
+  Future<void> createMonthlySummary(String userId, MonthlySummary summary);
+  Future<void> upsertBudget(String userId, String summaryId, Budget budget);
+  Future<void> updateCategoryCount(String userId, String summaryId, int change);
+  Future<void> deleteBudget(String userId, String summaryId, String budgetId);
+  Stream<List<MonthlySummary>> watchAllSummaries(String userId);
 }

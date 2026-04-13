@@ -8,6 +8,21 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._datasource);
 
   @override
+  Future<User> loginWithGoogle() async {
+    final result = await _datasource.loginWithGoogle();
+
+    return User(id: result.user!.uid, email: result.user!.email!);
+  }
+
+  @override
+  Stream<User?> authStateChanges() {
+    return _datasource.authStateChanges().map((fbUser) {
+      if (fbUser == null) return null;
+      return User(id: fbUser.uid, email: fbUser.email!);
+    });
+  }
+
+  @override
   Future<User> login(String email, String password) async {
     final result = await _datasource.login(email, password);
 

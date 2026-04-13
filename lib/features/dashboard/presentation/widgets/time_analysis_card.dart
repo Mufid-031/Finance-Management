@@ -1,4 +1,5 @@
 import 'package:finance_management/core/shared/widgets/custom_chip_filter.dart';
+import 'package:finance_management/core/shared/widgets/section_header.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +18,6 @@ class TimeAnalysisCard extends ConsumerStatefulWidget {
 }
 
 class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
-  // Ganti String ke Enum
   AnalysisPeriod selectedPeriod = AnalysisPeriod.weekly;
 
   @override
@@ -31,12 +31,12 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // IMPLEMENTASI SHARED WIDGET
+            SectionHeader(title: "Analysis by Time"),
+            const SizedBox(height: 20),
             CustomChipFilter<AnalysisPeriod>(
               values: AnalysisPeriod.values,
               selectedValue: selectedPeriod,
-              labelBuilder: (period) =>
-                  period.name, // Mengambil 'daily', 'weekly', dll
+              labelBuilder: (period) => period.name,
               onSelected: (period) {
                 setState(() => selectedPeriod = period);
               },
@@ -49,11 +49,9 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (err, _) => Center(child: Text("Error: $err")),
-              // ... inside transactionsAsync.when data: (transactions) ...
               data: (transactions) {
                 final chartData = _processTransactionData(transactions);
 
-                // Cari nilai tertinggi untuk skala sumbu Y
                 final maxIncome = chartData.incomeSpots
                     .map((e) => e.y)
                     .fold(0.0, (a, b) => a > b ? a : b);
@@ -64,16 +62,10 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
 
                 return Column(
                   children: [
-                    _buildTopLegend(
-                      chartData,
-                    ), // Legend dengan nominal (seperti request sebelumnya)
-                    const SizedBox(height: 25),
                     Row(
                       children: [
-                        // SUMBU Y
                         _buildYAxisLabels(maxY),
                         const SizedBox(width: 10),
-                        // CHART
                         Expanded(
                           child: SizedBox(
                             height: 200,
@@ -94,11 +86,8 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
                                   enabled: true,
                                 ),
                                 borderData: FlBorderData(show: false),
-                                // Atur skala Y agar konsisten dengan label
                                 minY: 0,
-                                maxY: maxY == 0
-                                    ? 100
-                                    : maxY * 1.2, // Kasih margin 20% di atas
+                                maxY: maxY == 0 ? 100 : maxY * 1.2,
                                 lineBarsData: [
                                   _buildLineData(
                                     color: AppColors.green,
@@ -117,6 +106,11 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
                     ),
                     const SizedBox(height: 10),
                     _buildXAxisLabels(chartData.labels),
+                    const SizedBox(height: 25),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [_buildTopLegend(chartData)],
+                    ),
                   ],
                 );
               },
@@ -127,7 +121,6 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     );
   }
 
-  // --- LOGIKA PEMPROSESAN DATA DENGAN ENUM ---
   _ChartProcessedData _processTransactionData(List<Transaction> transactions) {
     List<FlSpot> incomeSpots = [];
     List<FlSpot> expenseSpots = [];
@@ -195,18 +188,15 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
   }
 
   Widget _buildYAxisLabels(double maxY) {
-    // Jika tidak ada data, tampilkan range default
     final effectiveMax = maxY == 0 ? 100.0 : maxY;
 
-    // Buat 5 tingkatan label (0%, 25%, 50%, 75%, 100%)
     return SizedBox(
       height: 200,
-      width: 40, // Lebar area label
+      width: 40,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: List.generate(5, (index) {
-          // Hitung nilai per baris (dibalik karena Column mulai dari atas)
           final value = effectiveMax - (effectiveMax / 4 * index);
 
           return Text(
@@ -218,7 +208,6 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     );
   }
 
-  // Helper untuk menyingkat angka (misal 1.000.000 jadi 1M atau 1jt)
   String _formatShortAmount(double value) {
     if (value >= 1000000) {
       return '${(value / 1000000).toStringAsFixed(1)}M';
@@ -229,7 +218,6 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
   }
 
   Widget _buildXAxisLabels(List<String> labels) {
-    // Ambil beberapa label saja agar tidak penuh (misal: tiap 3 jam untuk daily)
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: labels.asMap().entries.map((e) {
@@ -259,7 +247,7 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [color.withOpacity(0.2), color.withOpacity(0.0)],
+          colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.0)],
         ),
       ),
     );

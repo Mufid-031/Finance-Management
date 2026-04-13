@@ -1,5 +1,6 @@
 import 'package:finance_management/core/shared/widgets/confirm_dialog.dart';
 import 'package:finance_management/core/shared/widgets/empty_state_widget.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:finance_management/features/wallet/domain/wallet.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:finance_management/features/wallet/presentation/widgets/add_wallet_modal.dart'; // Import modal baru
@@ -13,6 +14,7 @@ class WalletPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     final walletsAsync = ref.watch(walletsStreamProvider);
 
     return Scaffold(
@@ -35,6 +37,9 @@ class WalletPage extends ConsumerWidget {
             itemCount: wallets.length,
             itemBuilder: (context, index) {
               final wallet = wallets[index];
+
+              final walletConvertedBalance =
+                  wallet.balance * (settings.exchangeRate ?? 1.0);
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(
@@ -57,7 +62,11 @@ class WalletPage extends ConsumerWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
-                    CurrencyFormatter.format(wallet.balance),
+                    CurrencyFormatter.formatLocale(
+                      amount: walletConvertedBalance,
+                      symbol: settings.currencySymbol,
+                      currencyCode: settings.currency,
+                    ),
                     style: const TextStyle(color: AppColors.grey),
                   ),
                   trailing: Row(

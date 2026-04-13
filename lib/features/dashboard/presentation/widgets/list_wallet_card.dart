@@ -1,4 +1,5 @@
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -38,6 +39,7 @@ class ListWalletCard extends ConsumerWidget {
                   wallet.name,
                   wallet.balance,
                   wallet.iconCode,
+                  ref,
                 );
               } else {
                 return _buildAddWalletCard(context);
@@ -54,14 +56,19 @@ class ListWalletCard extends ConsumerWidget {
     String name,
     double balance,
     int iconCode,
+    WidgetRef ref,
   ) {
+    final settings = ref.watch(settingsProvider);
+
+    final convertedBalance = balance * (settings.exchangeRate ?? 1.0);
+
     return Container(
       width: 150,
       margin: const EdgeInsets.only(right: 15),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.white.withOpacity(0.05)),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.05)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -89,7 +96,11 @@ class ListWalletCard extends ConsumerWidget {
                 ),
                 Text(
                   // Gunakan CurrencyFormatter agar konsisten
-                  CurrencyFormatter.format(balance),
+                  CurrencyFormatter.formatLocaleCompact(
+                    amount: convertedBalance,
+                    symbol: settings.currencySymbol,
+                    currencyCode: settings.currency,
+                  ),
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 20,
@@ -114,7 +125,7 @@ class ListWalletCard extends ConsumerWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AppColors.main.withOpacity(0.5),
+            color: AppColors.main.withValues(alpha: 0.5),
             style: BorderStyle.solid,
           ),
         ),

@@ -6,6 +6,7 @@ import 'package:finance_management/features/budget/domain/budget.dart';
 import 'package:finance_management/features/budget/presentation/pages/budget_detail_page.dart';
 import 'package:finance_management/features/budget/presentation/pages/budget_page.dart';
 import 'package:finance_management/features/category/presentation/pages/category_page.dart';
+import 'package:finance_management/features/settings/presentation/pages/general_settings_page.dart';
 import 'package:finance_management/features/transaction/presentation/pages/transaction_page.dart';
 import 'package:finance_management/features/wallet/presentation/pages/wallet_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,6 +66,11 @@ final goRouterProvider = Provider((ref) {
       GoRoute(
         path: '/transactions',
         builder: (context, state) => const TransactionPage(),
+      ),
+      GoRoute(
+        path: '/settings/general',
+        name: 'general-settings',
+        builder: (context, state) => const GeneralSettingsPage(),
       ),
     ],
   );

@@ -3,11 +3,13 @@ import 'package:finance_management/features/settings/domain/settings.dart';
 class SettingsDTO {
   final String currency;
   final String currencySymbol;
+  final double exchangeRate;
   final bool isDarkMode;
 
   SettingsDTO({
     required this.currency,
     required this.currencySymbol,
+    this.exchangeRate = 1.0,
     required this.isDarkMode,
   });
 
@@ -15,6 +17,7 @@ class SettingsDTO {
     return SettingsDTO(
       currency: map['currency'] ?? 'USD',
       currencySymbol: map['currencySymbol'] ?? '\$',
+      exchangeRate: map['exchangeRate'] ?? 1.0,
       isDarkMode: map['isDarkMode'] ?? true,
     );
   }
@@ -23,6 +26,7 @@ class SettingsDTO {
     return {
       'currency': currency,
       'currencySymbol': currencySymbol,
+      'exchangeRate': exchangeRate,
       'isDarkMode': isDarkMode,
     };
   }
@@ -31,6 +35,7 @@ class SettingsDTO {
     return SettingsDTO(
       currency: domain.currency,
       currencySymbol: domain.currencySymbol,
+      exchangeRate: domain.exchangeRate ?? 1.0,
       isDarkMode: domain.isDarkMode,
     );
   }
@@ -39,6 +44,7 @@ class SettingsDTO {
     return Settings(
       currency: currency,
       currencySymbol: currencySymbol,
+      exchangeRate: exchangeRate,
       isDarkMode: isDarkMode,
     );
   }

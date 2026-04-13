@@ -1,4 +1,5 @@
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:finance_management/features/wallet/domain/wallet.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,8 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -66,7 +69,7 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
               height: 4,
               margin: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.grey.withOpacity(0.3),
+                color: AppColors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
@@ -86,10 +89,10 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
           const SizedBox(height: 15),
           TextField(
             controller: balanceController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
+            keyboardType: TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
               labelText: "Initial Balance",
-              prefixText: "\$ ",
+              prefixText: "${settings.currencySymbol} ",
               border: OutlineInputBorder(),
             ),
           ),
@@ -149,12 +152,18 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
               ),
               onPressed: () async {
                 if (nameController.text.isNotEmpty) {
+                  final rate = settings.exchangeRate ?? 1.0;
+
+                  final inputAmount =
+                      double.tryParse(balanceController.text) ?? 0.0;
+                  final baseAmount = inputAmount * rate;
+
                   await ref
                       .read(walletNotifierProvider.notifier)
                       .saveWallet(
                         id: widget.wallet?.id,
                         name: nameController.text,
-                        balance: double.tryParse(balanceController.text) ?? 0,
+                        balance: baseAmount,
                         iconCode: selectedIconCode,
                       );
                   if (context.mounted) Navigator.pop(context);

@@ -1,3 +1,4 @@
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
@@ -31,6 +32,8 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+
     final walletsAsync = ref.watch(walletsStreamProvider);
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final txState = ref.watch(transactionNotifierProvider);
@@ -97,15 +100,15 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
             TextField(
               controller: amountController,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
               style: const TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: AppColors.main,
               ),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: "0.00",
-                prefixText: "\$ ",
+                prefixText: "${settings.currencySymbol} ",
                 border: InputBorder.none,
               ),
             ),
@@ -226,11 +229,17 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       return;
     }
 
+    final settings = ref.watch(settingsProvider);
+    final rate = settings.exchangeRate ?? 1.0;
+
+    final inputAmount = double.tryParse(amountController.text) ?? 0.0;
+    final baseAmount = inputAmount * rate;
+
     await ref
         .read(transactionNotifierProvider.notifier)
         .addTransaction(
           title: nameController.text.isEmpty ? "Untitled" : nameController.text,
-          amount: double.tryParse(amountController.text) ?? 0,
+          amount: baseAmount,
           walletId: selectedWalletId!,
           categoryId: selectedCategoryId!,
           type: selectedType,

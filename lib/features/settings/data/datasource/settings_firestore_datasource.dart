@@ -10,7 +10,6 @@ class SettingsFirestoreDatasource {
     });
   }
 
-  // Ambil data sekali saja
   Future<Map<String, dynamic>> getSettings(String userId) async {
     final doc = await _firestore.collection('users').doc(userId).get();
     final data = doc.data();
@@ -21,8 +20,8 @@ class SettingsFirestoreDatasource {
     String userId,
     Map<String, dynamic> settingsData,
   ) {
-    return _firestore.collection('users').doc(userId).update({
+    return _firestore.collection('users').doc(userId).set({
       'settings': settingsData,
-    });
+    }, SetOptions(merge: true));
   }
 }

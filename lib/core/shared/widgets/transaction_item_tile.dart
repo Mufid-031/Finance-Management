@@ -2,11 +2,13 @@ import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/core/utils/currency_formatter.dart';
 import 'package:finance_management/core/utils/string_extension.dart';
 import 'package:finance_management/features/category/domain/category.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class TransactionItemTile extends StatelessWidget {
+class TransactionItemTile extends ConsumerWidget {
   final Transaction tx;
   final Category category;
 
@@ -17,9 +19,13 @@ class TransactionItemTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+
     final isExpense = tx.type == TransactionType.expense;
     final formattedDate = DateFormat('d MMM yyyy').format(tx.date);
+
+    final convertedBalance = tx.amount * (settings.exchangeRate ?? 1.0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -57,7 +63,7 @@ class TransactionItemTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "${isExpense ? '-' : '+'} ${CurrencyFormatter.format(tx.amount)}",
+                "${isExpense ? '-' : '+'} ${CurrencyFormatter.formatLocale(amount: convertedBalance, symbol: settings.currencySymbol, currencyCode: settings.currency)}",
                 style: TextStyle(
                   color: isExpense ? AppColors.red : AppColors.green,
                   fontWeight: FontWeight.bold,

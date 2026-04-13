@@ -12,7 +12,13 @@ class SettingsService {
 
   Future<void> updateCurrency(String userId, String code, String symbol) async {
     final current = await _repository.getSettings(userId);
-    final updated = current.copyWith(currency: code, currencySymbol: symbol);
+    final newRate = Settings.getRate(code);
+
+    final updated = current.copyWith(
+      currency: code,
+      currencySymbol: symbol,
+      exchangeRate: newRate,
+    );
     await _repository.updateSettings(userId, updated);
   }
 

@@ -1,8 +1,9 @@
-import 'package:finance_management/core/shared/widgets/confirm_dialog.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
-import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
+import 'package:finance_management/features/profile/presentation/widgets/logout_button.dart';
+import 'package:finance_management/features/profile/presentation/widgets/profile_item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -24,150 +25,64 @@ class ProfilePage extends ConsumerWidget {
         child: Column(
           children: [
             const SizedBox(height: 10),
-
-            // MENGGUNAKAN GRIDVIEW BUILDER (LEBIH KONSISTEN)
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1, // Mengatur rasio tinggi/lebar item
+              childAspectRatio: 1,
               children: [
-                _buildProfileItem(
-                  Icons.person,
-                  "Profile",
-                  "Login, authenticator",
-                  AppColors.main,
+                ProfileItemCard(
+                  icon: Icons.person,
+                  title: "Profile",
+                  subtitle: "Login, authenticator",
+                  color: AppColors.main,
+                  onTap: () {},
                 ),
-                _buildProfileItem(
-                  Icons.dashboard,
-                  "Appearance",
-                  "Widget, theme",
-                  AppColors.purple,
+                ProfileItemCard(
+                  icon: Icons.dashboard,
+                  title: "Appearance",
+                  subtitle: "Widget, theme",
+                  color: AppColors.purple,
+                  onTap: () {},
                 ),
-                _buildProfileItem(
-                  Icons.menu,
-                  "General",
-                  "Currency, clear data",
-                  AppColors.green,
+                ProfileItemCard(
+                  icon: Icons.menu,
+                  title: "General",
+                  subtitle: "Currency, clear data",
+                  color: AppColors.green,
+                  onTap: () => context.pushNamed('general-settings'),
                 ),
-                _buildProfileItem(
-                  Icons.settings,
-                  "Settings",
-                  "Account & alerts",
-                  AppColors.blue,
+                ProfileItemCard(
+                  icon: Icons.settings,
+                  title: "Settings",
+                  subtitle: "Account & alerts",
+                  color: AppColors.blue,
+                  onTap: () {},
                 ),
-                _buildProfileItem(
-                  Icons.stacked_line_chart_sharp,
-                  "Data",
-                  "Export & import",
-                  AppColors.orange,
+                ProfileItemCard(
+                  icon: Icons.stacked_line_chart_sharp,
+                  title: "Data",
+                  subtitle: "Export & import",
+                  color: AppColors.orange,
+                  onTap: () {},
                 ),
-                _buildProfileItem(
-                  Icons.privacy_tip,
-                  "Privacy",
-                  "Password & privacy",
-                  AppColors.red,
+                ProfileItemCard(
+                  icon: Icons.privacy_tip,
+                  title: "Privacy",
+                  subtitle: "Password & privacy",
+                  color: AppColors.red,
+                  onTap: () {},
                 ),
               ],
             ),
-
             const SizedBox(height: 30),
-
-            // TOMBOL LOGOUT
-            _buildLogoutButton(context, ref),
-
+            LogoutButton(),
             const SizedBox(height: 30),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildProfileItem(
-    IconData icon,
-    String title,
-    String subtitle,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.widgetColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.white.withValues(alpha: 0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 34),
-          ),
-          const Spacer(),
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: AppColors.grey, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton(BuildContext context, WidgetRef ref) {
-    return InkWell(
-      onTap: () => _showLogoutConfirmation(context, ref),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.red.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.red.withValues(alpha: 0.2)),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.logout_rounded, color: AppColors.red),
-            SizedBox(width: 12),
-            Text(
-              "Logout Account",
-              style: TextStyle(
-                color: AppColors.red,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLogoutConfirmation(BuildContext context, WidgetRef ref) {
-    ConfirmDialog.show(
-      context,
-      title: "Logout",
-      message: "Are you sure you want to sign out?",
-      confirmLabel: "Logout", // Label kustom
-      onConfirm: () => ref.read(authNotifierProvider.notifier).logout(),
     );
   }
 }

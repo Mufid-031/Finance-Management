@@ -1,5 +1,7 @@
 import 'package:finance_management/core/shared/widgets/custom_chip_filter.dart';
 import 'package:finance_management/core/shared/widgets/section_header.dart';
+import 'package:finance_management/core/utils/currency_formatter.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,21 +52,30 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
               ),
               error: (err, _) => Center(child: Text("Error: $err")),
               data: (transactions) {
-                final chartData = _processTransactionData(transactions);
+                final settings = ref.watch(settingsProvider);
+                final chartData = _processTransactionData(
+                  transactions,
+                  settings.exchangeRate ?? 1.0,
+                );
 
-                final maxIncome = chartData.incomeSpots
-                    .map((e) => e.y)
-                    .fold(0.0, (a, b) => a > b ? a : b);
-                final maxExpense = chartData.expenseSpots
-                    .map((e) => e.y)
-                    .fold(0.0, (a, b) => a > b ? a : b);
+                final maxIncome = chartData.incomeSpots.isEmpty
+                    ? 0.0
+                    : chartData.incomeSpots
+                          .map((e) => e.y)
+                          .reduce((a, b) => a > b ? a : b);
+                final maxExpense = chartData.expenseSpots.isEmpty
+                    ? 0.0
+                    : chartData.expenseSpots
+                          .map((e) => e.y)
+                          .reduce((a, b) => a > b ? a : b);
+
                 final maxY = (maxIncome > maxExpense ? maxIncome : maxExpense);
 
                 return Column(
                   children: [
                     Row(
                       children: [
-                        _buildYAxisLabels(maxY),
+                        _buildYAxisLabels(maxY, ref),
                         const SizedBox(width: 10),
                         Expanded(
                           child: SizedBox(
@@ -109,7 +120,7 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
                     const SizedBox(height: 25),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [_buildTopLegend(chartData)],
+                      children: [_buildBottomLegend(chartData, ref)],
                     ),
                   ],
                 );
@@ -121,7 +132,10 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     );
   }
 
-  _ChartProcessedData _processTransactionData(List<Transaction> transactions) {
+  _ChartProcessedData _processTransactionData(
+    List<Transaction> transactions,
+    double exchangeRate,
+  ) {
     List<FlSpot> incomeSpots = [];
     List<FlSpot> expenseSpots = [];
     List<String> labels = [];
@@ -179,15 +193,16 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
         }
       }
 
-      incomeSpots.add(FlSpot(i.toDouble(), totalIncome));
-      expenseSpots.add(FlSpot(i.toDouble(), totalExpense));
+      incomeSpots.add(FlSpot(i.toDouble(), totalIncome * exchangeRate));
+      expenseSpots.add(FlSpot(i.toDouble(), totalExpense * exchangeRate));
       labels.add(label);
     }
 
     return _ChartProcessedData(incomeSpots, expenseSpots, labels);
   }
 
-  Widget _buildYAxisLabels(double maxY) {
+  Widget _buildYAxisLabels(double maxY, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     final effectiveMax = maxY == 0 ? 100.0 : maxY;
 
     return SizedBox(
@@ -200,21 +215,16 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
           final value = effectiveMax - (effectiveMax / 4 * index);
 
           return Text(
-            _formatShortAmount(value),
+            CurrencyFormatter.formatLocaleCompact(
+              amount: value,
+              symbol: settings.currencySymbol,
+              currencyCode: settings.currency,
+            ).replaceAll(' ', ''),
             style: const TextStyle(color: AppColors.grey, fontSize: 9),
           );
         }),
       ),
     );
-  }
-
-  String _formatShortAmount(double value) {
-    if (value >= 1000000) {
-      return '${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(0)}K';
-    }
-    return value.toStringAsFixed(0);
   }
 
   Widget _buildXAxisLabels(List<String> labels) {
@@ -253,20 +263,27 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     );
   }
 
-  Widget _buildTopLegend(_ChartProcessedData data) {
+  Widget _buildBottomLegend(_ChartProcessedData data, WidgetRef ref) {
     final totalIn = data.incomeSpots.fold(0.0, (sum, spot) => sum + spot.y);
     final totalOut = data.expenseSpots.fold(0.0, (sum, spot) => sum + spot.y);
 
     return Row(
       children: [
-        _buildLegendItem("Income", AppColors.green, amount: totalIn),
+        _buildLegendItem("Income", AppColors.green, amount: totalIn, ref: ref),
         const SizedBox(width: 20),
-        _buildLegendItem("Spending", AppColors.red, amount: totalOut),
+        _buildLegendItem("Spending", AppColors.red, amount: totalOut, ref: ref),
       ],
     );
   }
 
-  Widget _buildLegendItem(String label, Color color, {double? amount}) {
+  Widget _buildLegendItem(
+    String label,
+    Color color, {
+    double? amount,
+    WidgetRef? ref,
+  }) {
+    final settings = ref!.watch(settingsProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -284,11 +301,14 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
             ),
           ],
         ),
-        if (amount != null)
-          Text(
-            NumberFormat.compactSimpleCurrency(locale: 'en_US').format(amount),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        Text(
+          CurrencyFormatter.formatLocaleCompact(
+            amount: amount ?? 0,
+            symbol: settings.currencySymbol,
+            currencyCode: settings.currency,
           ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
       ],
     );
   }

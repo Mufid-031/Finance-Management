@@ -156,7 +156,7 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
 
                   final inputAmount =
                       double.tryParse(balanceController.text) ?? 0.0;
-                  final baseAmount = inputAmount * rate;
+                  final baseAmount = inputAmount / rate;
 
                   await ref
                       .read(walletNotifierProvider.notifier)

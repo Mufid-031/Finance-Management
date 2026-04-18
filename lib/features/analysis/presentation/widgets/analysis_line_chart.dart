@@ -1,5 +1,3 @@
-import 'package:finance_management/core/shared/widgets/custom_chip_filter.dart';
-import 'package:finance_management/core/shared/widgets/section_header.dart';
 import 'package:finance_management/core/utils/currency_formatter.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -10,39 +8,31 @@ import 'package:finance_management/features/transaction/presentation/providers/t
 import 'package:finance_management/features/transaction/domain/transaction.dart';
 import 'package:intl/intl.dart';
 
-enum AnalysisPeriod { daily, weekly, monthly }
+// Enum kita pindahkan ke file ini agar bisa diakses secara global
+enum AnalysisPeriod { daily, weekly, monthly, yearly }
 
-class TimeAnalysisCard extends ConsumerStatefulWidget {
-  const TimeAnalysisCard({super.key});
+class TimeAnalysisChart extends ConsumerWidget {
+  // --- PROPS / PARAMETERS ---
+  final AnalysisPeriod selectedPeriod;
+  final Function(AnalysisPeriod) onPeriodChanged;
+
+  const TimeAnalysisChart({
+    super.key,
+    required this.selectedPeriod,
+    required this.onPeriodChanged,
+  });
 
   @override
-  ConsumerState<TimeAnalysisCard> createState() => _TimeAnalysisCardState();
-}
-
-class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
-  AnalysisPeriod _currentPeriod = AnalysisPeriod.weekly;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsStreamProvider);
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader(title: "Analysis by Time"),
-            const SizedBox(height: 20),
-            CustomChipFilter<AnalysisPeriod>(
-              values: AnalysisPeriod.values,
-              selectedValue: _currentPeriod,
-              labelBuilder: (period) => period.name,
-              onSelected: (period) {
-                setState(() => _currentPeriod = period);
-              },
-            ),
             const SizedBox(height: 20),
 
             transactionsAsync.when(
@@ -58,6 +48,7 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
                   settings.exchangeRate ?? 1.0,
                 );
 
+                // Hitung Max Y untuk skala otomatis
                 final maxIncome = chartData.incomeSpots.isEmpty
                     ? 0.0
                     : chartData.incomeSpots
@@ -86,15 +77,17 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
                                   show: true,
                                   drawVerticalLine: false,
                                   getDrawingHorizontalLine: (value) => FlLine(
-                                    color: AppColors.white.withValues(
-                                      alpha: 0.05,
-                                    ),
+                                    color: Colors.white.withOpacity(0.05),
                                     strokeWidth: 1,
                                   ),
                                 ),
                                 titlesData: const FlTitlesData(show: false),
-                                lineTouchData: const LineTouchData(
+                                lineTouchData: LineTouchData(
                                   enabled: true,
+                                  touchTooltipData: LineTouchTooltipData(
+                                    getTooltipColor: (_) =>
+                                        AppColors.widgetColor,
+                                  ),
                                 ),
                                 borderData: FlBorderData(show: false),
                                 minY: 0,
@@ -118,10 +111,6 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
                     const SizedBox(height: 10),
                     _buildXAxisLabels(chartData.labels),
                     const SizedBox(height: 25),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [_buildBottomLegend(chartData, ref)],
-                    ),
                   ],
                 );
               },
@@ -132,79 +121,93 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     );
   }
 
+  // --- LOGIKA PEMROSESAN DATA (Tetap Private di sini) ---
   _ChartProcessedData _processTransactionData(
     List<Transaction> transactions,
-    double exchangeRate,
+    double rate,
   ) {
     List<FlSpot> incomeSpots = [];
     List<FlSpot> expenseSpots = [];
     List<String> labels = [];
-
     DateTime now = DateTime.now();
 
-    // Sesuaikan iterasi dengan Enum
-    int iterations = _currentPeriod == AnalysisPeriod.daily
-        ? 24
-        : (_currentPeriod == AnalysisPeriod.weekly ? 7 : 12);
+    // Tentukan jumlah iterasi berdasarkan period
+    int iterations;
+    if (selectedPeriod == AnalysisPeriod.daily) {
+      iterations = 24;
+    } else if (selectedPeriod == AnalysisPeriod.weekly) {
+      iterations = 7;
+    } else if (selectedPeriod == AnalysisPeriod.monthly) {
+      iterations = 30; // Atau 12 jika ingin review bulan-bulan sebelumnya
+    } else {
+      iterations = 12; // Yearly (12 bulan)
+    }
 
     for (int i = 0; i < iterations; i++) {
-      double totalIncome = 0;
-      double totalExpense = 0;
+      double totalIn = 0;
+      double totalOut = 0;
       String label = "";
 
-      if (_currentPeriod == AnalysisPeriod.daily) {
+      if (selectedPeriod == AnalysisPeriod.daily) {
         label = "$i:00";
         for (var tx in transactions) {
           if (tx.date.day == now.day &&
-              tx.date.month == now.month &&
-              tx.date.year == now.year &&
-              tx.date.hour == i) {
+              tx.date.hour == i &&
+              tx.date.month == now.month) {
             tx.type == TransactionType.income
-                ? totalIncome += tx.amount
-                : totalExpense += tx.amount;
+                ? totalIn += tx.amount
+                : totalOut += tx.amount;
           }
         }
-      } else if (_currentPeriod == AnalysisPeriod.weekly) {
-        DateTime targetDate = now.subtract(Duration(days: 6 - i));
-        label = DateFormat('E').format(targetDate);
+      } else if (selectedPeriod == AnalysisPeriod.weekly) {
+        DateTime target = now.subtract(Duration(days: (iterations - 1) - i));
+        label = DateFormat('E').format(target);
         for (var tx in transactions) {
-          if (tx.date.day == targetDate.day &&
-              tx.date.month == targetDate.month &&
-              tx.date.year == targetDate.year) {
+          if (tx.date.day == target.day &&
+              tx.date.month == target.month &&
+              tx.date.year == target.year) {
             tx.type == TransactionType.income
-                ? totalIncome += tx.amount
-                : totalExpense += tx.amount;
+                ? totalIn += tx.amount
+                : totalOut += tx.amount;
+          }
+        }
+      } else if (selectedPeriod == AnalysisPeriod.yearly) {
+        // --- LOGIKA YEARLY (Per Bulan dalam setahun ini) ---
+        int targetMonth = i + 1;
+        label = DateFormat('MMM').format(DateTime(now.year, targetMonth));
+        for (var tx in transactions) {
+          if (tx.date.month == targetMonth && tx.date.year == now.year) {
+            tx.type == TransactionType.income
+                ? totalIn += tx.amount
+                : totalOut += tx.amount;
           }
         }
       } else {
-        int month = (now.month - (11 - i));
-        int year = now.year;
-        if (month <= 0) {
-          month += 12;
-          year -= 1;
-        }
-        label = DateFormat('MMM').format(DateTime(year, month));
+        // --- LOGIKA MONTHLY (30 Hari Terakhir) ---
+        DateTime target = now.subtract(Duration(days: (iterations - 1) - i));
+        label = target.day.toString();
         for (var tx in transactions) {
-          if (tx.date.month == month && tx.date.year == year) {
+          if (tx.date.day == target.day &&
+              tx.date.month == target.month &&
+              tx.date.year == target.year) {
             tx.type == TransactionType.income
-                ? totalIncome += tx.amount
-                : totalExpense += tx.amount;
+                ? totalIn += tx.amount
+                : totalOut += tx.amount;
           }
         }
       }
 
-      incomeSpots.add(FlSpot(i.toDouble(), totalIncome * exchangeRate));
-      expenseSpots.add(FlSpot(i.toDouble(), totalExpense * exchangeRate));
+      incomeSpots.add(FlSpot(i.toDouble(), totalIn * rate));
+      expenseSpots.add(FlSpot(i.toDouble(), totalOut * rate));
       labels.add(label);
     }
-
     return _ChartProcessedData(incomeSpots, expenseSpots, labels);
   }
 
+  // --- UI HELPERS ---
   Widget _buildYAxisLabels(double maxY, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final effectiveMax = maxY == 0 ? 100.0 : maxY;
-
     return SizedBox(
       height: 200,
       width: 40,
@@ -213,7 +216,6 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: List.generate(5, (index) {
           final value = effectiveMax - (effectiveMax / 4 * index);
-
           return Text(
             CurrencyFormatter.formatLocaleCompact(
               amount: value,
@@ -231,9 +233,21 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: labels.asMap().entries.map((e) {
-        bool show =
-            _currentPeriod == AnalysisPeriod.weekly ||
-            e.key % (_currentPeriod == AnalysisPeriod.daily ? 4 : 2) == 0;
+        // Tampilkan label tiap 1 unit untuk mingguan, tiap 3 unit untuk bulanan/yearly, tiap 4 untuk daily
+        bool show = false;
+        if (selectedPeriod == AnalysisPeriod.weekly) show = true;
+        if (selectedPeriod == AnalysisPeriod.daily && e.key % 4 == 0) {
+          show = true;
+        }
+        if ((selectedPeriod == AnalysisPeriod.monthly ||
+                selectedPeriod == AnalysisPeriod.yearly) &&
+            e.key % 3 == 0) {
+          show = true;
+        }
+        if (e.key == labels.length - 1) {
+          show = true; // Selalu tampilkan label terakhir
+        }
+
         return Text(
           show ? e.value : "",
           style: const TextStyle(color: AppColors.grey, fontSize: 10),
@@ -257,7 +271,7 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.0)],
+          colors: [color.withOpacity(0.2), color.withOpacity(0.0)],
         ),
       ),
     );
@@ -266,11 +280,11 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
   Widget _buildBottomLegend(_ChartProcessedData data, WidgetRef ref) {
     final totalIn = data.incomeSpots.fold(0.0, (sum, spot) => sum + spot.y);
     final totalOut = data.expenseSpots.fold(0.0, (sum, spot) => sum + spot.y);
-
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildLegendItem("Income", AppColors.green, amount: totalIn, ref: ref),
-        const SizedBox(width: 20),
+        const SizedBox(width: 25),
         _buildLegendItem("Spending", AppColors.red, amount: totalOut, ref: ref),
       ],
     );
@@ -283,7 +297,6 @@ class _TimeAnalysisCardState extends ConsumerState<TimeAnalysisCard> {
     WidgetRef? ref,
   }) {
     final settings = ref!.watch(settingsProvider);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

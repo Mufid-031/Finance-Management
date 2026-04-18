@@ -21,11 +21,11 @@ class TransactionItemTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final convertedBalance = tx.amount * (settings.exchangeRate ?? 1.0);
 
     final isExpense = tx.type == TransactionType.expense;
     final formattedDate = DateFormat('d MMM yyyy').format(tx.date);
 
-    final convertedBalance = tx.amount * (settings.exchangeRate ?? 1.0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -36,9 +36,17 @@ class TransactionItemTile extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: AppColors.backgroundColor,
-            child: Icon(category.icon, color: AppColors.main, size: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              IconData(category.icon.codePoint, fontFamily: 'MaterialIcons'),
+              color: AppColors.main,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 15),
           Expanded(

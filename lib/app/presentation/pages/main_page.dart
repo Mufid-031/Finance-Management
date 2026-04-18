@@ -1,6 +1,7 @@
 import 'package:finance_management/core/shared/widgets/add_transaction_modal.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/core/theme/theme_provider.dart';
+import 'package:finance_management/features/analysis/presentation/pages/analysis_page.dart';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/features/dashboard/presentation/pages/home_page.dart';
 import 'package:finance_management/features/profile/presentation/pages/profile_page.dart';
@@ -21,14 +22,15 @@ class _MainPageState extends ConsumerState<MainPage> {
 
   final pages = [
     const HomePage(),
-    const Center(child: Text("Analytics Page")),
+    const AnalysisPage(),
     const Center(child: Text("AI Assistant")),
     const ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authNotifierProvider).user;
+    final authStateAsync = ref.watch(authStateChangesProvider);
+    final user = authStateAsync.value;
     final iconColor = Theme.of(context).colorScheme.onSurface;
     final primaryColor = Theme.of(context).colorScheme.primary;
 

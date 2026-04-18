@@ -26,9 +26,12 @@ final walletNotifierProvider =
 
 // Provider untuk Data (Real-time Display)
 final walletsStreamProvider = StreamProvider<List<Wallet>>((ref) {
-  final user = ref.watch(authNotifierProvider).user;
+  final authStateAsync = ref.watch(authStateChangesProvider);
+  final user = authStateAsync.value;
+
   if (user == null) return Stream.value([]);
-  return ref.watch(walletServiceProvider).getWalletsStream(user.id);
+  
+  return ref.watch(walletServiceProvider).getWalletsStream(user.uid);
 });
 
 // Total Balance Auto-Calculate

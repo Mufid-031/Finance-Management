@@ -64,6 +64,7 @@ class _CategoryPageState extends ConsumerState<CategoryPage>
               _tabController.animateTo(index);
               setState(() => _currentTabIndex = index);
             },
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
           Expanded(
             child: Stack(
@@ -98,7 +99,7 @@ class _CategoryPageState extends ConsumerState<CategoryPage>
         child: const Icon(Icons.add, color: Colors.black),
       ),
     );
-  } // TUTUP KURUNG BUILD CUKUP SATU SAJA DI SINI
+  }
 
   Widget _buildCategoryList(List<Category> categories, CategoryType type) {
     final filtered = categories.where((c) => c.type == type).toList();
@@ -171,7 +172,7 @@ class _CategoryPageState extends ConsumerState<CategoryPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -206,66 +207,118 @@ class _CategoryPageState extends ConsumerState<CategoryPage>
           final List<IconData> currentPresets =
               selectedType == CategoryType.expense ? expenseIcons : incomeIcons;
 
-          return Padding(
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.backgroundColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+              ),
+            ),
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 20,
-              right: 20,
-              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              left: 24,
+              right: 24,
+              top: 12,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // UI Header & TextField tetap sama...
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 25),
+
                 Text(
-                  category == null ? "Add New Category" : "Update Category",
+                  category == null ? "Create Category" : "Edit Category",
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 25),
 
-                TextField(
-                  controller: nameController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: "Category Name",
-                    filled: true,
-                    fillColor: AppColors.backgroundColor.withValues(alpha: 0.1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                CustomFilterTabs(
+                  labels: const ["EXPENSE", "INCOME"],
+                  currentIndex: selectedType == CategoryType.expense ? 0 : 1,
+                  onTabChanged: (index) {
+                    setModalState(() {
+                      selectedType = index == 0
+                          ? CategoryType.expense
+                          : CategoryType.income;
+
+                      selectedIcon = selectedType == CategoryType.expense
+                          ? Icons.fastfood
+                          : Icons.payments;
+                    });
+                  },
+                ),
+                const SizedBox(height: 25),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.widgetColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+                  child: TextField(
+                    controller: nameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: "Category Name",
+                      hintStyle: TextStyle(color: AppColors.grey),
+                      border: InputBorder.none,
+                      icon: Icon(Icons.edit_note, color: AppColors.main),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  "Select Icon",
-                  style: TextStyle(color: AppColors.grey),
+                const SizedBox(height: 25),
+
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Visual Icon",
+                    style: TextStyle(
+                      color: AppColors.grey,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
 
                 // --- GRID ICON YANG SUDAH TERFILTER ---
-                Wrap(
-                  spacing: 15,
-                  runSpacing: 10,
-                  children: currentPresets.map((icon) {
-                    final isSelected = selectedIcon == icon;
-                    return GestureDetector(
-                      onTap: () => setModalState(() => selectedIcon = icon),
-                      child: CircleAvatar(
-                        backgroundColor: isSelected
-                            ? AppColors.main
-                            : Colors.transparent,
-                        child: Icon(
-                          icon,
-                          color: isSelected ? Colors.black : AppColors.grey,
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.widgetColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Wrap(
+                    spacing: 15,
+                    runSpacing: 10,
+                    children: currentPresets.map((icon) {
+                      final isSelected = selectedIcon == icon;
+                      return GestureDetector(
+                        onTap: () => setModalState(() => selectedIcon = icon),
+                        child: CircleAvatar(
+                          backgroundColor: isSelected
+                              ? AppColors.main
+                              : Colors.transparent,
+                          child: Icon(
+                            icon,
+                            color: isSelected ? Colors.black : AppColors.grey,
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
                 const SizedBox(height: 30),
 

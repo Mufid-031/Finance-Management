@@ -1,4 +1,5 @@
 import 'package:finance_management/features/auth/data/repository/auth_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:finance_management/features/auth/application/auth_service.dart';
@@ -24,4 +25,8 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
 ) {
   final authService = ref.watch(authServiceProvider);
   return AuthNotifier(authService, ref); // Kirim ref ke konstruktor
+});
+
+final authStateChangesProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
 });

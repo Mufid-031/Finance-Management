@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/features/settings/application/settings_service.dart';
 import 'package:finance_management/features/settings/domain/settings.dart';
@@ -17,36 +18,47 @@ class SettingsNotifier extends StateNotifier<Settings> {
   }
 
   void _init() {
-    final user = _ref.read(authNotifierProvider).user;
-    if (user != null) {
-      _startListening(user.id);
-    }
+    _ref.listen(authStateChangesProvider, (previous, next) {
+      final user = next.value;
 
-    _ref.listen(authNotifierProvider, (previous, next) {
-      if (next.user?.id != previous?.user?.id) {
+      if (user?.uid != previous?.value?.uid) {
         _subscription?.cancel();
-        if (next.user != null) _startListening(next.user!.id);
+        if (user != null) {
+          _startListening(user.uid);
+        } else {
+          state = Settings.defaultSettings();
+        }
       }
-    });
+    }, fireImmediately: true);
   }
 
   void _startListening(String userId) {
+    _subscription?.cancel();
     _subscription = _service.watchSettings(userId).listen((settings) {
       state = settings;
     });
   }
 
   Future<void> updateCurrency(String code, String symbol) async {
-    final user = _ref.read(authNotifierProvider).user;
+    final user = _ref.read(authStateChangesProvider).value;
     if (user == null) return;
 
-    final newState = state.copyWith(currency: code, currencySymbol: symbol);
-    state = newState;
+    state = state.copyWith(
+      currency: code,
+      currencySymbol: symbol,
+      exchangeRate: Settings.getRate(code),
+    );
 
     try {
-      await _service.updateCurrency(user.id, code, symbol);
+      await _service.updateCurrency(user.uid, code, symbol);
     } catch (e) {
       debugPrint("Error updating currency: $e");
     }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 }

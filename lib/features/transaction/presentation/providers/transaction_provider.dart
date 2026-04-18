@@ -28,10 +28,12 @@ final transactionNotifierProvider =
     });
 
 final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
-  final user = ref.watch(authNotifierProvider).user;
+  final authStateAsync = ref.watch(authStateChangesProvider);
+  final user = authStateAsync.value;
+
   if (user == null) return Stream.value([]);
 
-  return ref.watch(transactionServiceProvider).getRecentTransactions(user.id);
+  return ref.watch(transactionServiceProvider).getRecentTransactions(user.uid);
 });
 
 enum TransactionFilter { all, spending, income }

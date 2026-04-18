@@ -57,9 +57,11 @@ class TransactionPage extends ConsumerWidget {
           CustomFilterTabs(
             labels: const ["ALL", "EXPENSE", "INCOME"],
             currentIndex: selectedFilter.index,
-            onTabChanged: (index) =>
-                ref.read(transactionFilterProvider.notifier).state =
-                    TransactionFilter.values[index],
+            onTabChanged: (index) {
+              ref.read(transactionFilterProvider.notifier).state =
+                  TransactionFilter.values[index];
+            },
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
 
           Expanded(
@@ -67,7 +69,6 @@ class TransactionPage extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text("Error: $err")),
               data: (transactions) {
-
                 if (filteredList.isEmpty) {
                   return EmptyStateWidget(
                     message: searchQuery.isEmpty

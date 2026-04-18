@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/features/budget/application/budget_service.dart';
+import 'package:finance_management/features/budget/domain/budget.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_state.dart';
+import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -17,8 +19,8 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
   }
 
   void initCurrentMonth() {
-    final user = _ref.read(authNotifierProvider).user;
-    if (user == null) return;
+    final userId = _ref.read(authStateChangesProvider).value?.uid;
+    if (userId == null) return;
 
     state = state.copyWith(isLoading: true);
 
@@ -27,26 +29,39 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
 
     final now = DateTime.now();
 
-    _summarySubscription = _service.watchSummary(user.id, now).listen((
-      summary,
-    ) {
-      state = state.copyWith(activeSummary: summary, isLoading: false);
+    _summarySubscription = _service.watchSummary(userId, now).listen((summary) {
+      state = state.copyWith(activeSummary: summary);
     });
 
-    _budgetsSubscription = _service.watchBudgets(user.id, now).listen((
-      budgets,
-    ) {
-      state = state.copyWith(categoryBudgets: budgets, isLoading: false);
+    _budgetsSubscription = _service.watchBudgets(userId, now).listen((budgets) {
+      _updateBudgetsWithTransactions(budgets);
+    });
+  }
+
+  void _updateBudgetsWithTransactions(List<Budget> budgets) {
+    final transactionsAsync = _ref.watch(transactionsStreamProvider);
+
+    transactionsAsync.whenData((transactions) {
+      final updatedBudgets = budgets.map((budget) {
+        final actualSpent = _service.calculateSpentForCategory(
+          transactions,
+          budget.categoryId,
+        );
+
+        return budget.copyWith(spentAmount: actualSpent);
+      }).toList();
+
+      state = state.copyWith(categoryBudgets: updatedBudgets, isLoading: false);
     });
   }
 
   Future<void> setupMonthlyBudget(double limit) async {
     try {
-      final user = _ref.read(authNotifierProvider).user;
-      if (user == null) return;
+      final userId = _ref.read(authStateChangesProvider).value?.uid;
+      if (userId == null) throw Exception("User not authenticated");
 
       state = state.copyWith(isLoading: true);
-      await _service.setupMonthlyBudget(user.id, limit);
+      await _service.setupMonthlyBudget(userId, limit);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -54,10 +69,10 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
 
   Future<void> addCategoryBudget(String categoryId, double limit) async {
     try {
-      final user = _ref.read(authNotifierProvider).user;
-      if (user == null) return;
+      final userId = _ref.read(authStateChangesProvider).value?.uid;
+      if (userId == null) throw Exception("User not authenticated");
 
-      await _service.addCategoryBudget(user.id, categoryId, limit);
+      await _service.addCategoryBudget(userId, categoryId, limit);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
     }
@@ -65,13 +80,34 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
 
   Future<void> removeCategoryBudget(String summaryId, String budgetId) async {
     try {
-      final user = _ref.read(authNotifierProvider).user;
-      if (user == null) return;
+      final userId = _ref.read(authStateChangesProvider).value?.uid;
+      if (userId == null) throw Exception("User not authenticated");
 
-      await _service.deleteCategoryBudget(user.id, summaryId, budgetId);
+      await _service.deleteCategoryBudget(userId, summaryId, budgetId);
     } catch (e) {
       state = state.copyWith(errorMessage: e.toString());
     }
+  }
+
+
+  Future<void> refreshAndSync() async {
+    final userId = _ref.read(authStateChangesProvider).value?.uid;
+    if (userId == null) return;
+
+    state = state.copyWith(isLoading: true);
+
+    final transactions = _ref.read(transactionsStreamProvider).value ?? [];
+    final summaryId = _service.generateSummaryId(DateTime.now());
+
+    await _service.syncBudgetSpentAmounts(
+      userId,
+      summaryId,
+      transactions,
+      state.categoryBudgets,
+    );
+
+    initCurrentMonth();
+    state = state.copyWith(isLoading: false);
   }
 
   @override

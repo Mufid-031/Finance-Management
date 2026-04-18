@@ -1,3 +1,4 @@
+import 'package:finance_management/core/utils/currency_helper.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -229,11 +230,10 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       return;
     }
 
-    final settings = ref.watch(settingsProvider);
-    final rate = settings.exchangeRate ?? 1.0;
+    final settings = ref.read(settingsProvider);
 
     final inputAmount = double.tryParse(amountController.text) ?? 0.0;
-    final baseAmount = inputAmount * rate;
+    final baseAmount = inputAmount.toBase(settings);
 
     await ref
         .read(transactionNotifierProvider.notifier)

@@ -55,7 +55,7 @@ class RecentTransactions extends ConsumerWidget {
                     now.day - 2,
                   );
 
-                  final filteredList = transactions.where((tx) {
+                  final baseList = transactions.where((tx) {
                     final txDate = DateTime(
                       tx.date.year,
                       tx.date.month,
@@ -73,6 +73,21 @@ class RecentTransactions extends ConsumerWidget {
                     }
                     return isRecent && matchesTab;
                   }).toList();
+
+                  final Map<String, int> dailyCount = {};
+                  final List<Transaction> filteredList = [];
+
+                  for (var tx in baseList) {
+                    final dateKey =
+                        "${tx.date.year}-${tx.date.month}-${tx.date.day}";
+
+                    int count = dailyCount[dateKey] ?? 0;
+
+                    if (count < 3) {
+                      filteredList.add(tx);
+                      dailyCount[dateKey] = count + 1;
+                    }
+                  }
 
                   if (filteredList.isEmpty) {
                     return EmptyStateWidget(

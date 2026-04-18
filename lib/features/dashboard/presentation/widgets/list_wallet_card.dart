@@ -1,5 +1,7 @@
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/core/utils/color_generator.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
+import 'package:finance_management/features/wallet/domain/wallet.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,13 +36,7 @@ class ListWalletCard extends ConsumerWidget {
               if (index < wallets.length) {
                 final wallet = wallets[index];
                 // Kirim iconCode sebagai int
-                return _buildSquareCard(
-                  context,
-                  wallet.name,
-                  wallet.balance,
-                  wallet.iconCode,
-                  ref,
-                );
+                return _buildSquareCard(context, wallet, ref);
               } else {
                 return _buildAddWalletCard(context);
               }
@@ -51,16 +47,9 @@ class ListWalletCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildSquareCard(
-    BuildContext context,
-    String name,
-    double balance,
-    int iconCode,
-    WidgetRef ref,
-  ) {
+  Widget _buildSquareCard(BuildContext context, Wallet wallet, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-
-    final convertedBalance = balance * (settings.exchangeRate ?? 1.0);
+    final convertedBalance = wallet.balance * (settings.exchangeRate ?? 1.0);
 
     return Container(
       width: 150,
@@ -76,11 +65,14 @@ class ListWalletCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            CircleAvatar(
-              backgroundColor: AppColors.backgroundColor,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Icon(
-                // PERBAIKAN UTAMA: Bungkus int iconCode ke dalam IconData
-                IconData(iconCode, fontFamily: 'MaterialIcons'),
+                IconData(wallet.iconCode, fontFamily: 'MaterialIcons'),
                 color: AppColors.main,
                 size: 20,
               ),
@@ -89,7 +81,7 @@ class ListWalletCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  wallet.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: AppColors.grey, fontSize: 13),

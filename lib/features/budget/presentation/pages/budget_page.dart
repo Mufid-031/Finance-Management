@@ -1,7 +1,9 @@
 import 'package:finance_management/core/shared/widgets/custom_filter_tabs.dart';
+import 'package:finance_management/core/utils/currency_helper.dart';
 import 'package:finance_management/features/budget/presentation/widgets/active_budget_view.dart';
 import 'package:finance_management/features/budget/presentation/widgets/add_category_budget_modal.dart';
 import 'package:finance_management/features/budget/presentation/widgets/budget_history_view.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
@@ -26,7 +28,9 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
             labels: const ["Current Month", "History"],
             currentIndex: _currentTab,
             onTabChanged: (index) => setState(() => _currentTab = index),
+            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
+
           Expanded(
             child: _currentTab == 0
                 ? ActiveBudgetView(
@@ -42,6 +46,8 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
   }
 
   void _showSetupDialog(BuildContext context, WidgetRef ref) {
+    final settings = ref.read(settingsProvider);
+
     final controller = TextEditingController();
     showDialog(
       context: context,
@@ -49,11 +55,11 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
         title: const Text("Set Monthly Limit"),
         content: TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: "e.g. 500.00",
-            prefixText: "\$ ",
+          decoration: InputDecoration(
+            hintText: "0.00",
+            prefixText: "${settings.currencySymbol} ",
           ),
         ),
         actions: [
@@ -63,7 +69,10 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              final limit = double.tryParse(controller.text) ?? 0;
+              final settings = ref.read(settingsProvider);
+
+              final amount = double.tryParse(controller.text) ?? 0.0;
+              final limit = amount.toBase(settings);
               if (limit > 0) {
                 ref
                     .read(budgetNotifierProvider.notifier)
@@ -84,7 +93,7 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AddCategoryBudgetModal(ref: ref),
+      builder: (context) => AddCategoryBudgetModal(),
     );
   }
 }

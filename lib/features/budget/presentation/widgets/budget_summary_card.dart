@@ -1,7 +1,10 @@
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/core/utils/currency_formatter.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BudgetSummaryCard extends StatelessWidget {
+class BudgetSummaryCard extends ConsumerWidget {
   final double totalLimit;
   final double allocated;
 
@@ -12,7 +15,8 @@ class BudgetSummaryCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     final remaining = totalLimit - allocated;
     final percent = totalLimit > 0 ? (allocated / totalLimit) : 0.0;
 
@@ -31,7 +35,11 @@ class BudgetSummaryCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             // UBAH Rp KE $ DAN TAMBAHKAN 2 DESIMAL
-            "\$${totalLimit.toStringAsFixed(2)}",
+            CurrencyFormatter.formatLocale(
+              amount: totalLimit,
+              symbol: settings.currencySymbol,
+              currencyCode: settings.currency,
+            ),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
@@ -50,8 +58,8 @@ class BudgetSummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildInfo("Allocated", allocated),
-              _buildInfo("Remaining", remaining),
+              _buildInfo("Allocated", allocated, ref),
+              _buildInfo("Remaining", remaining, ref),
             ],
           ),
         ],
@@ -59,7 +67,9 @@ class BudgetSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfo(String label, double amount) {
+  Widget _buildInfo(String label, double amount, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -68,7 +78,11 @@ class BudgetSummaryCard extends StatelessWidget {
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         Text(
-          "\$${amount.toStringAsFixed(2)}",
+          CurrencyFormatter.formatLocaleCompact(
+            amount: amount,
+            symbol: settings.currencySymbol,
+            currencyCode: settings.currency,
+          ),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,

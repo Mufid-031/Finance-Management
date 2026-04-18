@@ -21,7 +21,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
-      final userId = _ref.read(authNotifierProvider).user?.id;
+      final userId = _ref.read(authStateChangesProvider).value?.uid;
       if (userId == null) throw Exception("User not authenticated");
 
       final category = Category(
@@ -47,7 +47,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
-      final userId = _ref.read(authNotifierProvider).user?.id;
+      final userId = _ref.read(authStateChangesProvider).value?.uid;
       if (userId == null) throw Exception("User not authenticated");
 
       await _service.deleteCategory(userId, categoryId);

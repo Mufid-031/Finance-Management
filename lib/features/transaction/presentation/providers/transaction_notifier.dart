@@ -22,12 +22,12 @@ class TransactionNotifier extends StateNotifier<TransactionState> {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
-      final user = _ref.read(authNotifierProvider).user;
-      if (user == null) throw Exception("User tidak terautentikasi");
+      final userId = _ref.read(authStateChangesProvider).value?.uid;
+      if (userId == null) throw Exception("User not authenticated");
 
       final tx = Transaction(
         id: '', // Firestore akan generate ID otomatis
-        userId: user.id,
+        userId: userId,
         walletId: walletId,
         categoryId: categoryId,
         title: title,

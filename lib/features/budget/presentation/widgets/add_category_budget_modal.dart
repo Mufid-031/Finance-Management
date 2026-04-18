@@ -1,14 +1,15 @@
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/core/utils/currency_helper.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
 import 'package:finance_management/features/category/domain/category.dart';
 import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class AddCategoryBudgetModal extends ConsumerStatefulWidget {
-  final WidgetRef ref;
-  const AddCategoryBudgetModal({super.key, required this.ref});
+  const AddCategoryBudgetModal({super.key});
 
   @override
   ConsumerState<AddCategoryBudgetModal> createState() =>
@@ -28,6 +29,8 @@ class _AddCategoryBudgetModalState
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final budgetState = ref.watch(budgetNotifierProvider);
 
@@ -41,7 +44,6 @@ class _AddCategoryBudgetModalState
         child: Center(child: Text("Error: $err")),
       ),
       data: (categoryList) {
-        // FILTER: Hanya expense dan yang belum ditambahkan
         final availableCategories = categoryList.where((cat) {
           final isExpense = cat.type == CategoryType.expense;
           final isNotAdded = !budgetState.categoryBudgets.any(
@@ -50,8 +52,6 @@ class _AddCategoryBudgetModalState
           return isExpense && isNotAdded;
         }).toList();
 
-        // FIX KRUSIAL: Sinkronisasi ID yang dipilih dengan daftar yang tersedia
-        // Mencegah error 'exactly one item with value' saat data Firestore berubah
         if (selectedCategoryId != null &&
             !availableCategories.any((cat) => cat.id == selectedCategoryId)) {
           selectedCategoryId = null;
@@ -107,7 +107,6 @@ class _AddCategoryBudgetModalState
                   ),
                 )
               else ...[
-                // Dropdown Form Field
                 DropdownButtonFormField<String>(
                   initialValue: selectedCategoryId,
                   isExpanded: true, // Mencegah overflow teks
@@ -123,11 +122,7 @@ class _AddCategoryBudgetModalState
                       value: cat.id,
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.circle,
-                            size: 10,
-                            color: AppColors.main,
-                          ),
+                          Icon(cat.icon, size: 10, color: AppColors.main),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -146,7 +141,7 @@ class _AddCategoryBudgetModalState
                   },
                 ),
                 const SizedBox(height: 15),
-                // Input Limit
+
                 TextField(
                   controller: limitController,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -158,11 +153,10 @@ class _AddCategoryBudgetModalState
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
-                    prefixText: "\$ ",
+                    prefixText: "${settings.currencySymbol} ",
                   ),
                 ),
                 const SizedBox(height: 25),
-                // Button Save
                 SizedBox(
                   width: double.infinity,
                   height: 55,
@@ -179,17 +173,14 @@ class _AddCategoryBudgetModalState
                           limitController.text.isNotEmpty) {
                         final limit =
                             double.tryParse(limitController.text) ?? 0;
-
-                        // Simpan ID ke variabel lokal sebelum modal ditutup
+                        final baseAmount = limit.toBase(settings);
                         final idToSave = selectedCategoryId;
 
-                        // 1. Tutup modal TERLEBIH DAHULU agar tidak error saat rebuild
                         context.pop();
 
-                        // 2. Jalankan simpan ke Firestore
                         await ref
                             .read(budgetNotifierProvider.notifier)
-                            .addCategoryBudget(idToSave!, limit);
+                            .addCategoryBudget(idToSave!, baseAmount);
                       }
                     },
                     child: const Text(

@@ -1,3 +1,6 @@
+import 'package:finance_management/core/utils/currency_formatter.dart';
+import 'package:finance_management/core/utils/currency_helper.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
@@ -8,6 +11,7 @@ class BudgetHistoryView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     final historyAsync = ref.watch(monthlySummariesStreamProvider);
 
     return historyAsync.when(
@@ -39,6 +43,8 @@ class BudgetHistoryView extends ConsumerWidget {
               "Dec",
             ];
 
+            final convertedTotalLimit = s.totalLimit.toConverted(settings);
+
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               shape: RoundedRectangleBorder(
@@ -55,7 +61,11 @@ class BudgetHistoryView extends ConsumerWidget {
                 ),
                 subtitle: Text("${s.categoryCount} Categories"),
                 trailing: Text(
-                  "\$${s.totalLimit.toStringAsFixed(0)}",
+                  CurrencyFormatter.formatLocaleCompact(
+                    amount: convertedTotalLimit,
+                    symbol: settings.currencySymbol,
+                    currencyCode: settings.currency,
+                  ),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

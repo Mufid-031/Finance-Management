@@ -27,9 +27,11 @@ final categoryNotifierProvider =
 
 // Provider untuk Data Stream (Tampilan Real-time)
 final categoriesStreamProvider = StreamProvider<List<Category>>((ref) {
-  final user = ref.watch(authNotifierProvider).user;
+  final authStateAsync = ref.watch(authStateChangesProvider);
+  final user = authStateAsync.value;
+
   if (user == null) return Stream.value([]);
 
   final service = ref.watch(categoryServiceProvider);
-  return service.getCategories(user.id);
+  return service.getCategories(user.uid);
 });

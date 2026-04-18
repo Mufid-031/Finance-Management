@@ -1,3 +1,6 @@
+import 'package:finance_management/core/utils/currency_formatter.dart';
+import 'package:finance_management/core/utils/currency_helper.dart';
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/features/budget/domain/budget.dart';
@@ -46,9 +49,9 @@ class BudgetDetailPage extends ConsumerWidget {
             child: Column(
               children: [
                 // Gunakan latestBudget, bukan budget
-                _buildProgressHeader(category.name, latestBudget),
+                _buildProgressHeader(category.name, latestBudget, ref),
                 const SizedBox(height: 40),
-                _buildInfoSection(latestBudget),
+                _buildInfoSection(latestBudget, ref),
               ],
             ),
           );
@@ -57,11 +60,20 @@ class BudgetDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProgressHeader(String categoryName, Budget budget) {
-    final percent = budget.limitAmount > 0
-        ? (budget.spentAmount / budget.limitAmount)
+  Widget _buildProgressHeader(
+    String categoryName,
+    Budget budget,
+    WidgetRef ref,
+  ) {
+    final settings = ref.watch(settingsProvider);
+
+    final convertedLimit = budget.limitAmount.toConverted(settings);
+    final convertedSpend = budget.spentAmount.toConverted(settings);
+
+    final percent = convertedLimit > 0
+        ? (convertedSpend / convertedLimit)
         : 0.0;
-    final isOverBudget = budget.spentAmount > budget.limitAmount;
+    final isOverBudget = convertedSpend > convertedLimit;
 
     return Column(
       children: [
@@ -102,7 +114,13 @@ class BudgetDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildInfoSection(Budget budget) {
+  Widget _buildInfoSection(Budget budget, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+
+    final convertedLimit = budget.limitAmount.toConverted(settings);
+    final convertedSpend = budget.spentAmount.toConverted(settings);
+    final remainingConverted = budget.remaining.toConverted(settings);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -113,18 +131,30 @@ class BudgetDetailPage extends ConsumerWidget {
         children: [
           _buildDetailRow(
             "Monthly Limit",
-            "\$${budget.limitAmount.toStringAsFixed(2)}",
+            CurrencyFormatter.formatLocale(
+              amount: convertedLimit,
+              symbol: settings.currencySymbol,
+              currencyCode: settings.currency,
+            ),
           ),
           const Divider(height: 30),
           _buildDetailRow(
             "Spent So Far",
-            "\$${budget.spentAmount.toStringAsFixed(2)}",
+            CurrencyFormatter.formatLocale(
+              amount: convertedSpend,
+              symbol: settings.currencySymbol,
+              currencyCode: settings.currency,
+            ),
             color: AppColors.red,
           ),
           const Divider(height: 30),
           _buildDetailRow(
             "Remaining",
-            "\$${budget.remaining.toStringAsFixed(2)}",
+            CurrencyFormatter.formatLocale(
+              amount: remainingConverted,
+              symbol: settings.currencySymbol,
+              currencyCode: settings.currency,
+            ),
             color: budget.remaining < 0 ? AppColors.red : AppColors.main,
             isBold: true,
           ),

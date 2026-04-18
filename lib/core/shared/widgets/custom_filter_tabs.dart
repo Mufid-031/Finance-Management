@@ -5,19 +5,21 @@ class CustomFilterTabs extends StatelessWidget {
   final List<String> labels;
   final int currentIndex;
   final Function(int) onTabChanged;
+  final EdgeInsets margin;
 
   const CustomFilterTabs({
     super.key,
     required this.labels,
     required this.currentIndex,
     required this.onTabChanged,
+    this.margin = EdgeInsets.zero,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(4),
+      margin: margin,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: AppColors.widgetColor,
         borderRadius: BorderRadius.circular(15),

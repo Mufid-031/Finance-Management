@@ -3,9 +3,12 @@ import 'package:finance_management/features/budget/application/budget_service.da
 import 'package:finance_management/features/budget/data/datasource/budget_firestore_datasource.dart';
 import 'package:finance_management/features/budget/data/repository/budget_repository.dart';
 import 'package:finance_management/features/budget/data/repository/budget_repository_impl.dart';
+import 'package:finance_management/features/budget/domain/budget.dart';
 import 'package:finance_management/features/budget/domain/monthly_summary.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_notifier.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_state.dart';
+import 'package:finance_management/features/transaction/domain/transaction.dart';
+import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
@@ -40,9 +43,33 @@ final remainingAllocationProvider = Provider((ref) {
 final monthlySummariesStreamProvider = StreamProvider<List<MonthlySummary>>((
   ref,
 ) {
-  final user = ref.watch(authNotifierProvider).user;
+  final authStateAsync = ref.watch(authStateChangesProvider);
+  final user = authStateAsync.value;
+
   if (user == null) return Stream.value([]);
 
   final service = ref.watch(budgetServiceProvider);
-  return service.watchAllSummaries(user.id);
+  return service.watchAllSummaries(user.uid);
+});
+
+final computedBudgetsProvider = Provider<List<Budget>>((ref) {
+  final budgetState = ref.watch(budgetNotifierProvider);
+  final transactionsAsync = ref.watch(transactionsStreamProvider);
+
+  return transactionsAsync.maybeWhen(
+    data: (transactions) {
+      return budgetState.categoryBudgets.map((budget) {
+        final spent = transactions
+            .where(
+              (tx) =>
+                  tx.categoryId == budget.categoryId &&
+                  tx.type == TransactionType.expense,
+            )
+            .fold(0.0, (sum, tx) => sum + tx.amount);
+
+        return budget.copyWith(spentAmount: spent);
+      }).toList();
+    },
+    orElse: () => budgetState.categoryBudgets,
+  );
 });

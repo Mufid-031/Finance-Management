@@ -1,4 +1,5 @@
 import 'package:finance_management/core/shared/widgets/add_transaction_modal.dart';
+import 'package:finance_management/core/shared/widgets/confirm_dialog.dart';
 import 'package:finance_management/core/shared/widgets/custom_filter_tabs.dart';
 import 'package:finance_management/core/shared/widgets/date_separator.dart';
 import 'package:finance_management/core/shared/widgets/empty_state_widget.dart';
@@ -6,19 +7,51 @@ import 'package:finance_management/core/shared/widgets/transaction_item_tile.dar
 import 'package:finance_management/core/utils/date_formatter.dart';
 import 'package:finance_management/features/category/domain/category.dart';
 import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
+import 'package:finance_management/features/transaction/domain/transaction.dart';
+import 'package:finance_management/features/transaction/presentation/providers/transaction_notifier.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
 
-class TransactionPage extends ConsumerWidget {
+class TransactionPage extends ConsumerStatefulWidget {
   const TransactionPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filteredList = ref.watch(filteredTransactionsProvider);
+  ConsumerState<TransactionPage> createState() => _TransactionPageState();
+}
 
-    final transactionsAsync = ref.watch(transactionsStreamProvider);
+class _TransactionPageState extends ConsumerState<TransactionPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Muat data awal saat halaman dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(transactionNotifierProvider.notifier).fetchInitialBatch();
+    });
+
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(transactionNotifierProvider.notifier).fetchNextBatch();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredList = ref.watch(filteredTransactionsProvider);
+    final txState = ref.watch(transactionNotifierProvider);
     final selectedFilter = ref.watch(transactionFilterProvider);
     final searchQuery = ref.watch(transactionSearchProvider).toLowerCase();
 
@@ -31,7 +64,6 @@ class TransactionPage extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Column(
               children: [
-                // INPUT SEARCH
                 TextField(
                   onChanged: (val) =>
                       ref.read(transactionSearchProvider.notifier).state = val,
@@ -55,7 +87,7 @@ class TransactionPage extends ConsumerWidget {
       body: Column(
         children: [
           CustomFilterTabs(
-            labels: const ["ALL", "EXPENSE", "INCOME"],
+            labels: const ["ALL", "EXPENSE", "INCOME", "TRANSFER"],
             currentIndex: selectedFilter.index,
             onTabChanged: (index) {
               ref.read(transactionFilterProvider.notifier).state =
@@ -65,61 +97,128 @@ class TransactionPage extends ConsumerWidget {
           ),
 
           Expanded(
-            child: transactionsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text("Error: $err")),
-              data: (transactions) {
-                if (filteredList.isEmpty) {
-                  return EmptyStateWidget(
+            child: txState.isLoading && filteredList.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : filteredList.isEmpty
+                ? EmptyStateWidget(
                     message: searchQuery.isEmpty
                         ? "No transactions yet"
                         : "No results for '$searchQuery'",
                     icon: Icons.search_off_outlined,
                     actionLabel: "Add New Transaction",
                     onActionPressed: () => _showAddTransactionModal(context),
-                  );
-                }
+                  )
+                : RefreshIndicator(
+                    onRefresh: () => ref
+                        .read(transactionNotifierProvider.notifier)
+                        .refresh(),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.only(top: 10, bottom: 80),
+                      itemCount:
+                          filteredList.length +
+                          1, // +1 untuk loading indicator di bawah
+                      itemBuilder: (context, index) {
+                        if (index == filteredList.length) {
+                          // Loading indicator di bagian bawah saat load more
+                          return txState.isLoadingMore
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 20),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox(height: 50);
+                        }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.only(top: 10, bottom: 80),
-                  itemCount: filteredList.length,
-                  itemBuilder: (context, index) {
-                    final tx = filteredList[index];
-                    final categories =
-                        ref.watch(categoriesStreamProvider).value ?? [];
+                        final tx = filteredList[index];
+                        final categories =
+                            ref.watch(categoriesStreamProvider).value ?? [];
 
-                    final category = categories.firstWhere(
-                      (c) => c.id == tx.categoryId,
-                      orElse: () => Category(
-                        id: '',
-                        name: 'General',
-                        icon: Icons.help_outline,
-                        type: CategoryType.expense,
-                      ),
-                    );
+                        final category = categories.firstWhere(
+                          (c) => c.id == tx.categoryId,
+                          orElse: () => Category(
+                            id: '',
+                            name: tx.type == TransactionType.transfer
+                                ? 'Transfer'
+                                : 'General',
+                            icon: tx.type == TransactionType.transfer
+                                ? Icons.swap_horiz
+                                : Icons.help_outline,
+                            type: CategoryType.expense,
+                          ),
+                        );
 
-                    final dateLabel = DateFormatter.getNiceDateLabel(tx.date);
-                    bool showHeader =
-                        index == 0 ||
-                        DateFormatter.getNiceDateLabel(tx.date) !=
-                            DateFormatter.getNiceDateLabel(
-                              filteredList[index - 1].date,
-                            );
+                        final dateLabel = DateFormatter.getNiceDateLabel(
+                          tx.date,
+                        );
+                        bool showHeader =
+                            index == 0 ||
+                            DateFormatter.getNiceDateLabel(tx.date) !=
+                                DateFormatter.getNiceDateLabel(
+                                  filteredList[index - 1].date,
+                                );
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (showHeader) DateSeparator(date: dateLabel),
-                          TransactionItemTile(tx: tx, category: category),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (showHeader) DateSeparator(date: dateLabel),
+                              Dismissible(
+                                key: Key(tx.id),
+                                direction: DismissDirection.endToStart,
+                                confirmDismiss: (direction) async {
+                                  return await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => ConfirmDialog(
+                                      title: "Delete Transaction",
+                                      message:
+                                          "Are you sure? Your wallet balance will be restored automatically.",
+                                      confirmLabel: "Delete",
+                                      onConfirm: () {},
+                                    ),
+                                  ).then((value) => value ?? false);
+                                },
+                                onDismissed: (_) {
+                                  ref
+                                      .read(
+                                        transactionNotifierProvider.notifier,
+                                      )
+                                      .deleteTransaction(tx);
+                                },
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.red,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                child: GestureDetector(
+                                  onTap: () => _showAddTransactionModal(
+                                    context,
+                                    transaction: tx,
+                                  ),
+                                  child: TransactionItemTile(
+                                    tx: tx,
+                                    category: category,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -131,7 +230,10 @@ class TransactionPage extends ConsumerWidget {
     );
   }
 
-  void _showAddTransactionModal(BuildContext context) {
+  void _showAddTransactionModal(
+    BuildContext context, {
+    Transaction? transaction,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -139,7 +241,7 @@ class TransactionPage extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
-      builder: (context) => const AddTransactionModal(),
+      builder: (context) => AddTransactionModal(transaction: transaction),
     );
   }
 }

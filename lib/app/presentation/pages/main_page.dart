@@ -1,6 +1,6 @@
 import 'package:finance_management/core/shared/widgets/add_transaction_modal.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
-import 'package:finance_management/core/theme/theme_provider.dart';
+import 'package:finance_management/features/ai_assistant/presentation/pages/ai_assistant_page.dart';
 import 'package:finance_management/features/analysis/presentation/pages/analysis_page.dart';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/features/dashboard/presentation/pages/home_page.dart';
@@ -23,7 +23,7 @@ class _MainPageState extends ConsumerState<MainPage> {
   final pages = [
     const HomePage(),
     const AnalysisPage(),
-    const Center(child: Text("AI Assistant")),
+    const AIAssistantPage(),
     const ProfilePage(),
   ];
 
@@ -35,6 +35,8 @@ class _MainPageState extends ConsumerState<MainPage> {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
+      resizeToAvoidBottomInset:
+          false, // BOSS, ini kuncinya agar FAB tidak naik menutupi input
       appBar: _buildAppBar(context, user?.email),
       body: pages[index],
 
@@ -99,7 +101,6 @@ class _MainPageState extends ConsumerState<MainPage> {
         : 'U';
 
     final displayEmail = email?.split("@")[0] ?? 'User';
-    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
     final iconColor = Theme.of(context).colorScheme.onSurface;
 
     return AppBar(
@@ -134,21 +135,6 @@ class _MainPageState extends ConsumerState<MainPage> {
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: () {
-            ref
-                .read(themeModeProvider.notifier)
-                .update(
-                  (state) => state == ThemeMode.dark
-                      ? ThemeMode.light
-                      : ThemeMode.dark,
-                );
-          },
-          icon: Icon(
-            isDark ? Icons.light_mode : Icons.dark_mode,
-            color: iconColor,
-          ),
-        ),
         IconButton(
           onPressed: () {},
           icon: Icon(Icons.notifications_none, color: iconColor),

@@ -86,48 +86,83 @@ class _AddCategoryBudgetModalState
               ),
               const Row(
                 children: [
-                  Icon(Icons.add_chart_rounded, color: AppColors.main),
-                  SizedBox(width: 10),
+                  Icon(
+                    Icons.add_chart_rounded,
+                    color: AppColors.main,
+                    size: 28,
+                  ),
+                  SizedBox(width: 12),
                   Text(
                     "Add Category Budget",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 10),
+              const Text(
+                "Allocate budget for a specific category.",
+                style: TextStyle(color: AppColors.grey, fontSize: 13),
+              ),
+              const SizedBox(height: 30),
 
               if (availableCategories.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 30),
-                  child: Center(
-                    child: Text(
-                      "No more expense categories available.",
-                      style: TextStyle(color: AppColors.grey),
-                    ),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.02),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Column(
+                    children: [
+                      Icon(
+                        Icons.category_outlined,
+                        color: AppColors.grey,
+                        size: 40,
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "All categories have budgets set.",
+                        style: TextStyle(color: AppColors.grey),
+                      ),
+                    ],
                   ),
                 )
               else ...[
                 DropdownButtonFormField<String>(
-                  initialValue: selectedCategoryId,
-                  isExpanded: true, // Mencegah overflow teks
+                  value: selectedCategoryId,
+                  isExpanded: true,
+                  dropdownColor: AppColors.widgetColor,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                   decoration: InputDecoration(
                     labelText: "Select Category",
+                    labelStyle: const TextStyle(color: AppColors.grey),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(color: Colors.white10),
                     ),
-                    prefixIcon: const Icon(Icons.category_outlined),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(color: AppColors.main),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.category_outlined,
+                      color: AppColors.main,
+                    ),
                   ),
                   items: availableCategories.map((cat) {
                     return DropdownMenuItem<String>(
                       value: cat.id,
                       child: Row(
                         children: [
-                          Icon(cat.icon, size: 10, color: AppColors.main),
-                          const SizedBox(width: 12),
+                          Icon(cat.icon, size: 20, color: AppColors.main),
+                          const SizedBox(width: 15),
                           Expanded(
                             child: Text(
                               cat.name,
-                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -140,31 +175,45 @@ class _AddCategoryBudgetModalState
                     });
                   },
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 20),
 
                 TextField(
                   controller: limitController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                   decoration: InputDecoration(
                     labelText: "Limit Amount",
-                    prefixIcon: const Icon(Icons.attach_money_rounded),
+                    labelStyle: const TextStyle(color: AppColors.grey),
+                    prefixIcon: const Icon(
+                      Icons.attach_money_rounded,
+                      color: AppColors.main,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(color: Colors.white10),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(color: AppColors.main),
                     ),
                     prefixText: "${settings.currencySymbol} ",
                   ),
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
                 SizedBox(
                   width: double.infinity,
-                  height: 55,
+                  height: 60,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.main,
+                      foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                       elevation: 0,
                     ),

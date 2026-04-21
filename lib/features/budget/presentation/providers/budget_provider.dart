@@ -25,11 +25,11 @@ final budgetServiceProvider = Provider((ref) {
 });
 
 final budgetNotifierProvider =
-    StateNotifierProvider<BudgetNotifier, BudgetState>((ref) {
+    StateNotifierProvider.autoDispose<BudgetNotifier, BudgetState>((ref) {
       return BudgetNotifier(ref.watch(budgetServiceProvider), ref);
     });
 
-final remainingAllocationProvider = Provider((ref) {
+final remainingAllocationProvider = Provider.autoDispose((ref) {
   final state = ref.watch(budgetNotifierProvider);
   if (state.activeSummary == null) return 0.0;
 
@@ -40,7 +40,7 @@ final remainingAllocationProvider = Provider((ref) {
   return state.activeSummary!.totalLimit - totalAllocated;
 });
 
-final monthlySummariesStreamProvider = StreamProvider<List<MonthlySummary>>((
+final monthlySummariesStreamProvider = StreamProvider.autoDispose<List<MonthlySummary>>((
   ref,
 ) {
   final authStateAsync = ref.watch(authStateChangesProvider);
@@ -52,7 +52,7 @@ final monthlySummariesStreamProvider = StreamProvider<List<MonthlySummary>>((
   return service.watchAllSummaries(user.uid);
 });
 
-final computedBudgetsProvider = Provider<List<Budget>>((ref) {
+final computedBudgetsProvider = Provider.autoDispose<List<Budget>>((ref) {
   final budgetState = ref.watch(budgetNotifierProvider);
   final transactionsAsync = ref.watch(transactionsStreamProvider);
 

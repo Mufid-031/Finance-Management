@@ -5,4 +5,5 @@ abstract class CategoryRepository {
   Future<void> addCategory(String userId, Category category);
   Future<void> updateCategory(String userId, Category category);
   Future<void> deleteCategory(String userId, String categoryId);
+  Future<void> seedDefaultCategories(String userId);
 }

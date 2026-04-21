@@ -21,7 +21,7 @@ final analysisServiceProvider = Provider((ref) {
 });
 
 final analysisNotifierProvider =
-    StateNotifierProvider<AnalysisNotifier, AnalysisState>((ref) {
+    StateNotifierProvider.autoDispose<AnalysisNotifier, AnalysisState>((ref) {
       final repo = ref.watch(analysisRepositoryProvider);
       final service = ref.watch(analysisServiceProvider);
       return AnalysisNotifier(repo, service, ref);

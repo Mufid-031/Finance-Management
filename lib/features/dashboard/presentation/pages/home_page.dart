@@ -3,7 +3,6 @@ import 'package:finance_management/features/dashboard/presentation/widgets/time_
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/features/dashboard/presentation/widgets/balance_card.dart';
-import 'package:finance_management/features/dashboard/presentation/widgets/info_card.dart';
 import 'package:finance_management/features/dashboard/presentation/widgets/list_wallet_card.dart';
 import 'package:finance_management/features/dashboard/presentation/widgets/quick_actions.dart';
 import 'package:finance_management/features/dashboard/presentation/widgets/recent_transactions.dart';
@@ -31,15 +30,14 @@ class HomePage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               BalanceCard(balance: totalBalance),
-              // const InfoCard(),
-              // const SizedBox(height: 15),
+              const SizedBox(height: 15),
               const ListWalletCard(),
               const SizedBox(height: 15),
               const QuickActions(),
               const SizedBox(height: 15),
               const RecentTransactions(),
-              // const SizedBox(height: 15),
-              // const MonthlyBudgetCard(),
+              const SizedBox(height: 15),
+              const MonthlyBudgetCard(),
               const SizedBox(height: 15),
               const TimeAnalysisCard(),
               const SizedBox(height: 15),

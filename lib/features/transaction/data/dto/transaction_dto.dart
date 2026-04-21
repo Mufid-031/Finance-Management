@@ -5,16 +5,18 @@ class TransactionDTO {
   final String id;
   final String userId;
   final String walletId;
+  final String? toWalletId;
   final String categoryId;
   final String title;
   final double amount;
-  final String type; // 'income' atau 'expense'
+  final String type; 
   final DateTime date;
 
   TransactionDTO({
     required this.id,
     required this.userId,
     required this.walletId,
+    this.toWalletId,
     required this.categoryId,
     required this.title,
     required this.amount,
@@ -22,59 +24,58 @@ class TransactionDTO {
     required this.date,
   });
 
-  // 1. Dari Firestore Map ke DTO
   factory TransactionDTO.fromMap(String id, Map<String, dynamic> map) {
     return TransactionDTO(
       id: id,
       userId: map['userId'] ?? '',
       walletId: map['walletId'] ?? '',
+      toWalletId: map['toWalletId'],
       categoryId: map['categoryId'] ?? '',
       title: map['title'] ?? '',
       amount: (map['amount'] ?? 0.0).toDouble(),
       type: map['type'] ?? 'expense',
-      // Firestore menyimpan tanggal sebagai Timestamp, kita ubah ke DateTime
       date: (map['date'] as Timestamp).toDate(),
     );
   }
 
-  // 2. Dari Domain ke DTO (Untuk persiapan simpan)
   factory TransactionDTO.fromDomain(Transaction tx) {
     return TransactionDTO(
       id: tx.id,
       userId: tx.userId,
       walletId: tx.walletId,
+      toWalletId: tx.toWalletId,
       categoryId: tx.categoryId,
       title: tx.title,
       amount: tx.amount,
-      type: tx.type == TransactionType.income ? 'income' : 'expense',
+      type: tx.type.name,
       date: tx.date,
     );
   }
 
-  // 3. Dari DTO ke Domain (Untuk dikonsumsi UI)
   Transaction toDomain() {
     return Transaction(
       id: id,
       userId: userId,
       walletId: walletId,
+      toWalletId: toWalletId,
       categoryId: categoryId,
       title: title,
       amount: amount,
-      type: type == 'income' ? TransactionType.income : TransactionType.expense,
+      type: TransactionType.values.firstWhere((e) => e.name == type),
       date: date,
     );
   }
 
-  // 4. Dari DTO ke Firestore Map
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
       'walletId': walletId,
+      'toWalletId': toWalletId,
       'categoryId': categoryId,
       'title': title,
       'amount': amount,
       'type': type,
-      'date': Timestamp.fromDate(date), // Simpan sebagai Timestamp
+      'date': Timestamp.fromDate(date),
       'createdAt': FieldValue.serverTimestamp(),
     };
   }

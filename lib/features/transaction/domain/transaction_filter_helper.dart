@@ -15,11 +15,13 @@ extension TransactionListFilter on List<Transaction> {
       }
 
       bool matchesTab = true;
-      if (selectedFilter != null) {
+      if (selectedFilter != null && selectedFilter != TransactionFilter.all) {
         if (selectedFilter == TransactionFilter.income) {
           matchesTab = tx.type == TransactionType.income;
         } else if (selectedFilter == TransactionFilter.spending) {
           matchesTab = tx.type == TransactionType.expense;
+        } else if (selectedFilter == TransactionFilter.transfer) {
+          matchesTab = tx.type == TransactionType.transfer;
         }
       }
 

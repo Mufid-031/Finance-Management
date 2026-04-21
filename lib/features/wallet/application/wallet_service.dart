@@ -18,12 +18,13 @@ class WalletService {
   }
 
   /// Membuat dompet otomatis saat user pertama kali mendaftar (Onboarding)
-  Future<void> createInitialWallet(String userId) async {
+  Future<void> createInitialWallet(String userId, {String currency = 'USD'}) async {
     final initial = Wallet(
       id: '', // Akan digenerate oleh Firestore
       name: 'Main Wallet',
       balance: 0.0,
       iconCode: Icons.account_balance_wallet.codePoint, // Simpan sebagai int
+      currency: currency,
     );
     await repository.addWallet(userId, initial);
   }

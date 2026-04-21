@@ -7,12 +7,14 @@ class WalletDTO {
   final String name;
   final double balance;
   final int iconCode;
+  final String currency;
 
   WalletDTO({
     this.id,
     required this.name,
     required this.balance,
     required this.iconCode,
+    required this.currency,
   });
 
   factory WalletDTO.fromMap(String id, Map<String, dynamic> map) {
@@ -22,11 +24,17 @@ class WalletDTO {
       balance: (map['balance'] ?? 0.0).toDouble(),
       // GUNAKAN DEFAULT VALUE JIKA NULL
       iconCode: map['iconCode'] ?? Icons.account_balance_wallet.codePoint,
+      currency: map['currency'] ?? 'USD',
     );
   }
 
   Map<String, dynamic> toMap() {
-    return {'name': name, 'balance': balance, 'iconCode': iconCode};
+    return {
+      'name': name,
+      'balance': balance,
+      'iconCode': iconCode,
+      'currency': currency,
+    };
   }
 
   Wallet toDomain() {
@@ -35,6 +43,7 @@ class WalletDTO {
       name: name,
       balance: balance,
       iconCode: iconCode,
+      currency: currency,
     );
   }
 
@@ -44,6 +53,7 @@ class WalletDTO {
       name: domain.name,
       balance: domain.balance,
       iconCode: domain.iconCode,
+      currency: domain.currency,
     );
   }
 }

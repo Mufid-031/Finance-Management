@@ -70,6 +70,8 @@ class RecentTransactions extends ConsumerWidget {
                       matchesTab = tx.type == TransactionType.income;
                     } else if (selectedFilter == TransactionFilter.spending) {
                       matchesTab = tx.type == TransactionType.expense;
+                    } else if (selectedFilter == TransactionFilter.transfer) {
+                      matchesTab = tx.type == TransactionType.transfer;
                     }
                     return isRecent && matchesTab;
                   }).toList();
@@ -111,8 +113,12 @@ class RecentTransactions extends ConsumerWidget {
                         (c) => c.id == tx.categoryId,
                         orElse: () => Category(
                           id: '',
-                          name: 'General',
-                          icon: Icons.help_outline,
+                          name: tx.type == TransactionType.transfer
+                              ? 'Transfer'
+                              : 'General',
+                          icon: tx.type == TransactionType.transfer
+                              ? Icons.swap_horiz
+                              : Icons.help_outline,
                           type: CategoryType.expense,
                         ),
                       );

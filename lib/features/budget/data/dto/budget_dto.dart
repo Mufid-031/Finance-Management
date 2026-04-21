@@ -5,14 +5,18 @@ class BudgetDTO {
   final String categoryId;
   final String monthlySummaryId;
   final double limitAmount;
-  final double spentAmount; // WAJIB ADA agar budget bisa berkurang
+  final double spentAmount;
+  final bool isRollover;
+  final double rolloverAmount;
 
   BudgetDTO({
     required this.id,
     required this.categoryId,
     required this.monthlySummaryId,
     required this.limitAmount,
-    this.spentAmount = 0.0, // Default 0.0
+    this.spentAmount = 0.0,
+    this.isRollover = false,
+    this.rolloverAmount = 0.0,
   });
 
   // Konversi ke Objek Domain
@@ -22,6 +26,8 @@ class BudgetDTO {
     monthlySummaryId: monthlySummaryId,
     limitAmount: limitAmount,
     spentAmount: spentAmount,
+    isRollover: isRollover,
+    rolloverAmount: rolloverAmount,
   );
 
   factory BudgetDTO.fromMap(String id, Map<String, dynamic> map) => BudgetDTO(
@@ -30,6 +36,8 @@ class BudgetDTO {
     monthlySummaryId: map['monthlySummaryId'] ?? '',
     limitAmount: (map['limitAmount'] as num).toDouble(),
     spentAmount: (map['spentAmount'] as num? ?? 0.0).toDouble(),
+    isRollover: map['isRollover'] ?? false,
+    rolloverAmount: (map['rolloverAmount'] as num? ?? 0.0).toDouble(),
   );
 
   Map<String, dynamic> toMap() => {
@@ -37,7 +45,9 @@ class BudgetDTO {
     'categoryId': categoryId,
     'monthlySummaryId': monthlySummaryId,
     'limitAmount': limitAmount,
-    'spentAmount': spentAmount, // Simpan ke Firestore
+    'spentAmount': spentAmount,
+    'isRollover': isRollover,
+    'rolloverAmount': rolloverAmount,
   };
 
   factory BudgetDTO.fromDomain(Budget domain) => BudgetDTO(
@@ -46,5 +56,7 @@ class BudgetDTO {
     monthlySummaryId: domain.monthlySummaryId,
     limitAmount: domain.limitAmount,
     spentAmount: domain.spentAmount,
+    isRollover: domain.isRollover,
+    rolloverAmount: domain.rolloverAmount,
   );
 }

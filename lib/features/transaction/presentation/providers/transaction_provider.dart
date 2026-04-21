@@ -23,11 +23,11 @@ final transactionServiceProvider = Provider((ref) {
 });
 
 final transactionNotifierProvider =
-    StateNotifierProvider<TransactionNotifier, TransactionState>((ref) {
+    StateNotifierProvider.autoDispose<TransactionNotifier, TransactionState>((ref) {
       return TransactionNotifier(ref.watch(transactionServiceProvider), ref);
     });
 
-final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
+final transactionsStreamProvider = StreamProvider.autoDispose<List<Transaction>>((ref) {
   final authStateAsync = ref.watch(authStateChangesProvider);
   final user = authStateAsync.value;
 
@@ -36,16 +36,30 @@ final transactionsStreamProvider = StreamProvider<List<Transaction>>((ref) {
   return ref.watch(transactionServiceProvider).getRecentTransactions(user.uid);
 });
 
-enum TransactionFilter { all, spending, income }
+// BOSS, Tambah tipe transfer di filter
+enum TransactionFilter { all, spending, income, transfer }
 
-final transactionFilterProvider = StateProvider<TransactionFilter>(
+final transactionFilterProvider = StateProvider.autoDispose<TransactionFilter>(
   (ref) => TransactionFilter.all,
 );
 
-final transactionSearchProvider = StateProvider<String>((ref) => "");
+final transactionSearchProvider = StateProvider.autoDispose<String>((ref) => "");
 
-final filteredTransactionsProvider = Provider<List<Transaction>>((ref) {
+final totalMonthlyExpenseProvider = Provider.autoDispose<double>((ref) {
   final transactions = ref.watch(transactionsStreamProvider).value ?? [];
+  final now = DateTime.now();
+  
+  return transactions
+      .where((tx) => 
+          tx.type == TransactionType.expense &&
+          tx.date.month == now.month &&
+          tx.date.year == now.year)
+      .fold(0.0, (sum, tx) => sum + tx.amount);
+});
+
+final filteredTransactionsProvider = Provider.autoDispose<List<Transaction>>((ref) {
+  final txState = ref.watch(transactionNotifierProvider);
+  final transactions = txState.transactions;
   final filter = ref.watch(transactionFilterProvider);
   final searchQuery = ref.watch(transactionSearchProvider).toLowerCase();
 

@@ -9,6 +9,8 @@ class Budget {
   final String monthlySummaryId;
   final double limitAmount;
   final double spentAmount;
+  final bool isRollover;
+  final double rolloverAmount;
 
   Budget({
     required this.id,
@@ -16,6 +18,8 @@ class Budget {
     required this.monthlySummaryId,
     required this.limitAmount,
     this.spentAmount = 0.0,
+    this.isRollover = false,
+    this.rolloverAmount = 0.0,
   });
 
   // Tambahkan ini jika belum ada
@@ -25,6 +29,8 @@ class Budget {
     String? monthlySummaryId,
     double? limitAmount,
     double? spentAmount,
+    bool? isRollover,
+    double? rolloverAmount,
   }) {
     return Budget(
       id: id ?? this.id,
@@ -32,11 +38,14 @@ class Budget {
       monthlySummaryId: monthlySummaryId ?? this.monthlySummaryId,
       limitAmount: limitAmount ?? this.limitAmount,
       spentAmount: spentAmount ?? this.spentAmount,
+      isRollover: isRollover ?? this.isRollover,
+      rolloverAmount: rolloverAmount ?? this.rolloverAmount,
     );
   }
 
-  double get remaining => limitAmount - spentAmount;
-  double get percentUsed => limitAmount > 0 ? (spentAmount / limitAmount) : 0.0;
+  double get totalLimit => limitAmount + rolloverAmount;
+  double get remaining => totalLimit - spentAmount;
+  double get percentUsed => totalLimit > 0 ? (spentAmount / totalLimit) : 0.0;
 }
 
 extension BudgetX on Budget {

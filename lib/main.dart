@@ -1,5 +1,6 @@
 import 'package:finance_management/core/router/app_router.dart';
 import 'package:finance_management/core/theme/theme_provider.dart';
+import 'package:finance_management/core/utils/notification_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,9 @@ import 'package:finance_management/firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  
+  // Initialize Notifications
+  await NotificationService().init();
 
   runApp(ProviderScope(child: const MyApp()));
 }

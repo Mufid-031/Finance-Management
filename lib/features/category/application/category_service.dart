@@ -13,4 +13,6 @@ class CategoryService {
       repository.updateCategory(userId, cat);
   Future<void> deleteCategory(String userId, String id) =>
       repository.deleteCategory(userId, id);
+  Future<void> seedDefaultCategories(String userId) =>
+      repository.seedDefaultCategories(userId);
 }

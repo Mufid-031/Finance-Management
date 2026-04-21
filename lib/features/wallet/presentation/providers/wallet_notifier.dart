@@ -18,6 +18,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
     required String name,
     required double balance,
     int? iconCode, // Tambahkan parameter iconCode
+    required String currency,
   }) async {
     try {
       state = state.copyWith(isLoading: true);
@@ -30,6 +31,7 @@ class WalletNotifier extends StateNotifier<WalletState> {
         name: name,
         balance: balance,
         iconCode: iconCode ?? Icons.account_balance_wallet.codePoint,
+        currency: currency,
       );
 
       if (id == null) {

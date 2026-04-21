@@ -1,3 +1,4 @@
+import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/core/utils/currency_helper.dart';
 import 'package:finance_management/features/budget/presentation/widgets/category_budget_item.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
@@ -53,38 +54,72 @@ class ActiveBudgetView extends ConsumerWidget {
         await ref.read(budgetNotifierProvider.notifier).refreshAndSync();
       },
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        physics: const BouncingScrollPhysics(),
         children: [
           BudgetSummaryCard(
             totalLimit: convertedTotalLimit,
             allocated: convertedAllocated,
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 35),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Category Budgets",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Category Budgets",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "Set limits for each category",
+                      style: TextStyle(color: AppColors.grey, fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-              IconButton(
-                onPressed: onAddCategoryPressed,
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: Colors.white,
-                  size: 28,
+              Material(
+                color: AppColors.main.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(15),
+                child: IconButton(
+                  onPressed: onAddCategoryPressed,
+                  icon: const Icon(
+                    Icons.add_rounded,
+                    color: AppColors.main,
+                    size: 26,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          if (computedBudgets.isEmpty) // Gunakan computedBudgets
-            const Center(child: Text("No category budgets added yet."))
+          const SizedBox(height: 20),
+          if (computedBudgets.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.category_outlined,
+                    size: 60,
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
+                  const SizedBox(height: 15),
+                  const Text(
+                    "No category budgets added yet.",
+                    style: TextStyle(color: AppColors.grey),
+                  ),
+                ],
+              ),
+            )
           else
             ...computedBudgets.map(
-              // Gunakan computedBudgets
               (budget) => CategoryBudgetItem(budget: budget),
             ),
+          const SizedBox(height: 80), // Space for FAB if any
         ],
       ),
     );

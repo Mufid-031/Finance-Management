@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Fungsi pembantu untuk mengecek kepemilikan dokumen
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Amankan seluruh data di bawah koleksi 'users'
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // Amankan sub-koleksi secara rekursif (wallets, transactions, budgets, dll)
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // Blokir akses ke koleksi lain jika ada (standar keamanan)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

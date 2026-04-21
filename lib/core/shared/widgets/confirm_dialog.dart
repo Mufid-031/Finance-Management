@@ -25,13 +25,13 @@ class ConfirmDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, false),
           child: const Text("Cancel", style: TextStyle(color: AppColors.grey)),
         ),
         TextButton(
           onPressed: () {
             onConfirm();
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
           child: Text(
             confirmLabel,

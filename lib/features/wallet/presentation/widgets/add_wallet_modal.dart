@@ -17,6 +17,7 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
   late TextEditingController nameController;
   late TextEditingController balanceController;
   late int selectedIconCode;
+  late String selectedCurrency;
 
   // Daftar Ikon yang bisa dipilih untuk Wallet
   final List<IconData> walletIcons = [
@@ -29,6 +30,8 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
     Icons.account_box,
   ];
 
+  final List<String> currencies = ['USD', 'IDR', 'EUR', 'GBP', 'JPY'];
+
   @override
   void initState() {
     super.initState();
@@ -38,6 +41,7 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
     );
     selectedIconCode =
         widget.wallet?.iconCode ?? Icons.account_balance_wallet.codePoint;
+    selectedCurrency = widget.wallet?.currency ?? 'USD';
   }
 
   @override
@@ -87,14 +91,35 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
             ),
           ),
           const SizedBox(height: 15),
-          TextField(
-            controller: balanceController,
-            keyboardType: TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(
-              labelText: "Initial Balance",
-              prefixText: "${settings.currencySymbol} ",
-              border: OutlineInputBorder(),
-            ),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: balanceController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: "Initial Balance",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: selectedCurrency,
+                  decoration: const InputDecoration(
+                    labelText: "Currency",
+                    border: OutlineInputBorder(),
+                  ),
+                  items: currencies.map((c) => DropdownMenuItem(
+                    value: c,
+                    child: Text(c, style: const TextStyle(fontSize: 12)),
+                  )).toList(),
+                  onChanged: (val) => setState(() => selectedCurrency = val!),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           const Text(
@@ -152,19 +177,20 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
               ),
               onPressed: () async {
                 if (nameController.text.isNotEmpty) {
-                  final rate = settings.exchangeRate ?? 1.0;
-
                   final inputAmount =
                       double.tryParse(balanceController.text) ?? 0.0;
-                  final baseAmount = inputAmount / rate;
-
+                  
+                  // BOSS, kita simpan saldo awal sesuai mata uang yang dipilih.
+                  // Nantinya saat transaksi, baru kita konversi jika perlu.
+                  
                   await ref
                       .read(walletNotifierProvider.notifier)
                       .saveWallet(
                         id: widget.wallet?.id,
                         name: nameController.text,
-                        balance: baseAmount,
+                        balance: inputAmount,
                         iconCode: selectedIconCode,
+                        currency: selectedCurrency,
                       );
                   if (context.mounted) Navigator.pop(context);
                 }

@@ -37,15 +37,15 @@ class _AIAssistantPageState extends ConsumerState<AIAssistantPage> {
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(aiChatProvider);
-    
+
     // BOSS, kita deteksi apakah keyboard sedang muncul atau tidak
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      resizeToAvoidBottomInset: true, 
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text("BOSS AI Chat"),
+        title: const Text("Vantage AI Chat"),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -79,10 +79,10 @@ class _AIAssistantPageState extends ConsumerState<AIAssistantPage> {
             // Jika keyboard buka: margin bawah kecil (10)
             // Jika keyboard tutup: margin bawah besar (85) agar di atas FAB MainPage
             margin: EdgeInsets.only(
-              left: 15, 
-              right: 15, 
-              top: 10, 
-              bottom: isKeyboardOpen ? 10 : 85, 
+              left: 15,
+              right: 15,
+              top: 10,
+              bottom: isKeyboardOpen ? 10 : 85,
             ),
             decoration: BoxDecoration(
               color: AppColors.widgetColor,
@@ -98,17 +98,26 @@ class _AIAssistantPageState extends ConsumerState<AIAssistantPage> {
             child: SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 child: Row(
                   children: [
                     const SizedBox(width: 10),
                     Expanded(
                       child: TextField(
                         controller: _messageController,
-                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
                         decoration: const InputDecoration(
-                          hintText: "Tanya sesuatu pada BOSS AI...",
-                          hintStyle: TextStyle(color: AppColors.grey, fontSize: 13),
+                          hintText: "Ask Vantage AI anything...",
+                          hintStyle: TextStyle(
+                            color: AppColors.grey,
+                            fontSize: 13,
+                          ),
                           border: InputBorder.none,
                         ),
                         onSubmitted: (val) {
@@ -119,9 +128,16 @@ class _AIAssistantPageState extends ConsumerState<AIAssistantPage> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.send_rounded, color: AppColors.main),
+                      icon: Icon(
+                        chatState.isLoading
+                            ? Icons.stop_rounded
+                            : Icons.send_rounded,
+                        color: AppColors.main,
+                      ),
                       onPressed: () {
-                        ref.read(aiChatProvider.notifier).sendMessage(_messageController.text);
+                        ref
+                            .read(aiChatProvider.notifier)
+                            .sendMessage(_messageController.text);
                         _messageController.clear();
                         _scrollToBottom();
                       },
@@ -145,30 +161,36 @@ class _ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(14),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        decoration: BoxDecoration(
-          color: message.isUser ? AppColors.main : AppColors.widgetColor,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(message.isUser ? 20 : 0),
-            bottomRight: Radius.circular(message.isUser ? 0 : 20),
-          ),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: message.isUser ? Colors.black : Colors.white,
-            fontSize: 14,
-            height: 1.4,
-          ),
-        ),
-      ).animate().fadeIn(duration: 200.ms).slideX(begin: message.isUser ? 0.05 : -0.05),
+      child:
+          Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.all(14),
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                decoration: BoxDecoration(
+                  color: message.isUser
+                      ? AppColors.main
+                      : AppColors.widgetColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(message.isUser ? 20 : 0),
+                    bottomRight: Radius.circular(message.isUser ? 0 : 20),
+                  ),
+                ),
+                child: Text(
+                  message.text,
+                  style: TextStyle(
+                    color: message.isUser ? Colors.black : Colors.white,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                ),
+              )
+              .animate()
+              .fadeIn(duration: 200.ms)
+              .slideX(begin: message.isUser ? 0.05 : -0.05),
     );
   }
 }

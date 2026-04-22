@@ -1,3 +1,4 @@
+import 'package:finance_management/features/settings/presentation/pages/about_app_page.dart';
 import 'package:finance_management/features/settings/presentation/pages/general_settings_page.dart';
 import 'package:finance_management/features/settings/presentation/pages/appearance_settings_page.dart';
 import 'package:finance_management/features/settings/presentation/pages/profile_detail_page.dart';
@@ -18,5 +19,10 @@ final settingsRoutes = [
     path: '/settings/profile',
     name: 'profile-detail',
     builder: (context, state) => const ProfileDetailPage(),
+  ),
+  GoRoute(
+    path: '/settings/about',
+    name: 'about-app',
+    builder: (context, state) => const AboutAppPage(),
   ),
 ];

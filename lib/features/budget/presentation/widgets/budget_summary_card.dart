@@ -1,5 +1,5 @@
+import 'package:finance_management/core/shared/widgets/animated_currency_text.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
-import 'package:finance_management/core/utils/currency_formatter.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +20,6 @@ class BudgetSummaryCard extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final remaining = totalLimit - allocated;
     final percent = totalLimit > 0 ? (allocated / totalLimit) : 0.0;
-    final displayPercent = (percent * 100).clamp(0, 100).toStringAsFixed(0);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -50,12 +49,8 @@ class BudgetSummaryCard extends ConsumerWidget {
                     const SizedBox(height: 5),
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(
-                        CurrencyFormatter.formatLocale(
-                          amount: totalLimit,
-                          symbol: settings.currencySymbol,
-                          currencyCode: settings.currency,
-                        ),
+                      child: AnimatedCurrencyText(
+                        amount: totalLimit,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 26,
@@ -70,39 +65,46 @@ class BudgetSummaryCard extends ConsumerWidget {
               SizedBox(
                 height: 80,
                 width: 80,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    PieChart(
-                      PieChartData(
-                        sectionsSpace: 0,
-                        centerSpaceRadius: 30,
-                        startDegreeOffset: -90,
-                        sections: [
-                          PieChartSectionData(
-                            value: percent > 1 ? 1 : percent,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0, end: percent),
+                  duration: const Duration(milliseconds: 2000),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            sectionsSpace: 0,
+                            centerSpaceRadius: 30,
+                            startDegreeOffset: -90,
+                            sections: [
+                              PieChartSectionData(
+                                value: value > 1 ? 1 : value,
+                                color: AppColors.main,
+                                radius: 8,
+                                showTitle: false,
+                              ),
+                              PieChartSectionData(
+                                value: value > 1 ? 0 : 1 - value,
+                                color: Colors.white.withValues(alpha: 0.05),
+                                radius: 8,
+                                showTitle: false,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          "${(value * 100).toStringAsFixed(0)}%",
+                          style: const TextStyle(
                             color: AppColors.main,
-                            radius: 8,
-                            showTitle: false,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
-                          PieChartSectionData(
-                            value: percent > 1 ? 0 : 1 - percent,
-                            color: Colors.white.withValues(alpha: 0.05),
-                            radius: 8,
-                            showTitle: false,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      "$displayPercent%",
-                      style: const TextStyle(
-                        color: AppColors.main,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -121,7 +123,7 @@ class BudgetSummaryCard extends ConsumerWidget {
                   "Allocated",
                   allocated,
                   AppColors.main,
-                  settings,
+                  ref,
                 ),
                 Container(
                   width: 1,
@@ -134,7 +136,7 @@ class BudgetSummaryCard extends ConsumerWidget {
                   "Remaining",
                   remaining,
                   remaining < 0 ? AppColors.red : AppColors.blue,
-                  settings,
+                  ref,
                 ),
               ],
             ),
@@ -149,7 +151,7 @@ class BudgetSummaryCard extends ConsumerWidget {
     String label,
     double amount,
     Color color,
-    dynamic settings,
+    WidgetRef ref,
   ) {
     return Expanded(
       child: Column(
@@ -160,12 +162,8 @@ class BudgetSummaryCard extends ConsumerWidget {
             style: const TextStyle(color: AppColors.grey, fontSize: 11),
           ),
           const SizedBox(height: 4),
-          Text(
-            CurrencyFormatter.formatLocaleCompact(
-              amount: amount,
-              symbol: settings.currencySymbol,
-              currencyCode: settings.currency,
-            ),
+          AnimatedCurrencyText(
+            amount: amount,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.bold,

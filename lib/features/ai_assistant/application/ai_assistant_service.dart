@@ -1,5 +1,6 @@
 import 'package:finance_management/features/ai_assistant/data/repository/ai_assistant_repository_impl.dart';
 import 'package:finance_management/features/ai_assistant/domain/ai_transaction_result.dart';
+import 'package:finance_management/features/budget/domain/budget.dart';
 import 'package:finance_management/features/category/domain/category.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
 import 'package:finance_management/features/wallet/domain/wallet.dart';
@@ -62,6 +63,7 @@ class AIAssistantService {
     required List<Wallet> wallets,
     required List<Category> categories,
     required List<Transaction> transactions,
+    required List<Budget> budgets,
     required double totalBalance,
     required String mainCurrency,
   }) async {
@@ -69,7 +71,7 @@ class AIAssistantService {
         .map((w) => "- ${w.name}: ${w.balance} ${w.currency}")
         .join("\n");
 
-    final transactionSummary = transactions.take(10).map((t) {
+    final transactionSummary = transactions.take(15).map((t) {
       final categoryName = categories
           .firstWhere((c) => c.id == t.categoryId,
               orElse: () => Category(
@@ -78,27 +80,49 @@ class AIAssistantService {
                   icon: Icons.help,
                   type: CategoryType.expense))
           .name;
-      return "- ${t.title}: ${t.amount} ${t.type.name} ($categoryName)";
+      return "- ${t.title}: ${t.amount} ${t.type.name} ($categoryName) pada ${t.date.day}/${t.date.month}";
+    }).join("\n");
+
+    final budgetInfo = budgets.map((b) {
+      final categoryName = categories
+          .firstWhere((c) => c.id == b.categoryId,
+              orElse: () => Category(
+                  id: '',
+                  name: 'Other',
+                  icon: Icons.help,
+                  type: CategoryType.expense))
+          .name;
+      final percent = b.limitAmount > 0 ? (b.spentAmount / b.limitAmount * 100) : 0;
+      return "- $categoryName: Terpakai ${b.spentAmount} / Limit ${b.limitAmount} (${percent.toStringAsFixed(1)}%)";
     }).join("\n");
 
     final prompt = """
-    You are BOSS AI, a helpful financial personal assistant.
-    Current Financial Context:
+    You are Vantage AI, a highly intelligent financial consultant and personal wealth architect.
+    
+    Current Financial Context for this month:
     - Total Balance: $totalBalance $mainCurrency
     - Wallets:
     $walletInfo
     
-    Recent Transactions:
+    - Budget Status per Category:
+    $budgetInfo
+
+    - Recent 15 Transactions:
     $transactionSummary
 
     User asked: "$userMessage"
     
-    Instructions:
+    Capabilities & Instructions:
     1. Answer in Indonesian.
-    2. Be concise but professional.
-    3. Refer to the user as 'BOSS'.
-    4. If asked about balance, wallets, or transactions, use the provided context.
-    5. If asked about something unrelated to finance, politely bring the conversation back to their money management.
+    2. Be professional, analytical, and highly precise.
+    3. Use formal yet accessible language. Refer to the user as 'User' or address them professionally.
+    4. You can provide:
+       - Strategic spending analysis.
+       - Portfolio & budget health audits.
+       - Advanced financial planning suggestions.
+       - Detailed transaction history lookup.
+    5. If asked about something unrelated to finance, diplomatically steer the conversation back to capital management.
+    6. Use $mainCurrency for all monetary mentions.
     """;
 
     return _repository.getAIAdvice(prompt);

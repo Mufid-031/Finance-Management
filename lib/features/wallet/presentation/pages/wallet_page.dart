@@ -8,6 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/core/utils/currency_formatter.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:flutter_animate/flutter_animate.dart';
 
 class WalletPage extends ConsumerWidget {
   const WalletPage({super.key});
@@ -40,58 +43,93 @@ class WalletPage extends ConsumerWidget {
 
               final walletConvertedBalance =
                   wallet.balance * (settings.exchangeRate ?? 1.0);
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Dismissible(
+                  key: Key(wallet.id),
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (direction) async {
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (context) => ConfirmDialog(
+                        title: "Delete Wallet",
+                        message:
+                            "Are you sure? All transactions in this wallet will be affected.",
+                        confirmLabel: "Delete",
+                        onConfirm: () {},
+                      ),
+                    ).then((value) => value ?? false);
+                  },
+                  onDismissed: (_) {
+                    ref
+                        .read(walletNotifierProvider.notifier)
+                        .deleteWallet(wallet.id);
+                  },
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    decoration: BoxDecoration(
+                      color: AppColors.red,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.delete, color: Colors.white),
                   ),
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.main.withValues(alpha: 0.1),
-                    child: Icon(
-                      IconData(wallet.iconCode, fontFamily: 'MaterialIcons'),
-                      color: AppColors.main,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.widgetColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
+                    ),
+                    child: ListTile(
+                      onTap: () =>
+                          context.pushNamed('wallet-detail', extra: wallet),
+                      contentPadding: const EdgeInsets.all(16),
+                      leading: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.main.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Icon(
+                          IconData(
+                            wallet.iconCode,
+                            fontFamily: 'MaterialIcons',
+                          ),
+                          color: AppColors.main,
+                        ),
+                      ),
+                      title: Text(
+                        wallet.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          CurrencyFormatter.formatLocale(
+                            amount: walletConvertedBalance,
+                            symbol: settings.currencySymbol,
+                            currencyCode: settings.currency,
+                          ),
+                          style: const TextStyle(
+                            color: AppColors.main,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.grey,
+                      ),
                     ),
                   ),
-                  title: Text(
-                    wallet.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    CurrencyFormatter.formatLocale(
-                      amount: walletConvertedBalance,
-                      symbol: settings.currencySymbol,
-                      currencyCode: settings.currency,
-                    ),
-                    style: const TextStyle(color: AppColors.grey),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.edit_outlined,
-                          color: AppColors.grey,
-                        ),
-                        onPressed: () =>
-                            _showAddWalletModal(context, wallet: wallet),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: AppColors.red,
-                        ),
-                        onPressed: () =>
-                            _showDeleteConfirmation(context, ref, wallet),
-                      ),
-                    ],
-                  ),
                 ),
-              );
+              ).animate().fadeIn(delay: (index * 100).ms).slideY(begin: 0.2);
             },
           );
         },

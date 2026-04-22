@@ -7,6 +7,8 @@ class AuthTextField extends StatelessWidget {
   final String hintText;
   final bool obscureText;
   final TextInputAction? textInputAction;
+  final IconData? prefixIcon;
+  final Widget? suffixIcon;
 
   const AuthTextField({
     super.key,
@@ -15,6 +17,8 @@ class AuthTextField extends StatelessWidget {
     required this.hintText,
     this.obscureText = false,
     this.textInputAction,
+    this.prefixIcon,
+    this.suffixIcon,
   });
 
   @override
@@ -23,18 +27,42 @@ class AuthTextField extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 16)),
-        SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.grey,
+          ),
+        ),
+        const SizedBox(height: 8),
         TextField(
           controller: controller,
           obscureText: obscureText,
           textInputAction: textInputAction,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
-            border: OutlineInputBorder(),
+            isDense: true,
             hintText: hintText,
-            hintStyle: TextStyle(color: AppColors.grey),
+            hintStyle: const TextStyle(color: AppColors.grey, fontSize: 14),
+            prefixIcon: prefixIcon != null
+                ? Icon(prefixIcon, color: AppColors.main, size: 20)
+                : null,
+            suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: AppColors.widgetColor.withValues(alpha: 0.5),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: AppColors.grey),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppColors.main, width: 1.5),
             ),
           ),
         ),

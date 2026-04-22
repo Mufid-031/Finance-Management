@@ -1,3 +1,4 @@
+import 'package:finance_management/core/shared/widgets/animated_currency_text.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/core/utils/currency_formatter.dart';
 import 'package:finance_management/core/utils/currency_helper.dart';
@@ -45,13 +46,9 @@ class ComparisonCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            CurrencyFormatter.formatLocale(
-              amount: convertedAmount,
-              symbol: settings.currencySymbol,
-              currencyCode: settings.currency,
-            ),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          AnimatedCurrencyText(
+            amount: convertedAmount,
+            style: const TextStyle(color: AppColors.grey, fontSize: 18),
           ),
         ],
       ),

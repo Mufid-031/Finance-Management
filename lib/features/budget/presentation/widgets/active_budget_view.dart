@@ -109,7 +109,7 @@ class ActiveBudgetView extends ConsumerWidget {
                   ),
                   const SizedBox(height: 15),
                   const Text(
-                    "No category budgets added yet.",
+                    "No budget categories established yet.",
                     style: TextStyle(color: AppColors.grey),
                   ),
                 ],

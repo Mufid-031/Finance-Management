@@ -21,6 +21,8 @@ class AnalysisExpensesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final analysisState = ref.watch(analysisNotifierProvider);
     final settings = ref.watch(settingsProvider);
+    final budgetState = ref.watch(budgetNotifierProvider);
+    final computedBudgets = ref.watch(computedBudgetsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
@@ -47,7 +49,7 @@ class AnalysisExpensesPage extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: analysisState.isLoading
+            child: (analysisState.isLoading || (budgetState.isLoading && computedBudgets.isEmpty))
                 ? const Center(child: CircularProgressIndicator())
                 : ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -65,7 +67,13 @@ class AnalysisExpensesPage extends ConsumerWidget {
                             ),
                       const SizedBox(height: 15),
                       ...analysisState.categoryReports.map(
-                        (report) => _buildCategoryTile(report, settings, ref),
+                        (report) => _buildCategoryTile(
+                          report: report,
+                          settings: settings,
+                          ref: ref,
+                          computedBudgets: computedBudgets,
+                          selectedFilter: analysisState.selectedFilter,
+                        ),
                       ),
                       const SizedBox(height: 30),
                     ],
@@ -96,12 +104,19 @@ class AnalysisExpensesPage extends ConsumerWidget {
             flex: 2,
             child: SizedBox(
               height: 160,
-              child: PieChart(
-                PieChartData(
-                  sectionsSpace: 4,
-                  centerSpaceRadius: 35,
-                  sections: _buildPieSections(state),
-                ),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: 100),
+                duration: const Duration(milliseconds: 2000),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return PieChart(
+                    PieChartData(
+                      sectionsSpace: 4,
+                      centerSpaceRadius: 35,
+                      sections: _buildPieSections(state, value),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -156,14 +171,14 @@ class AnalysisExpensesPage extends ConsumerWidget {
     );
   }
 
-  List<PieChartSectionData> _buildPieSections(AnalysisState state) {
+  List<PieChartSectionData> _buildPieSections(AnalysisState state, double animValue) {
     return state.categoryReports.map((report) {
       // PAKAI UTILS COLOR DISINI BOSS
       final color = ColorGenerator.fromId(report.categoryId);
 
       return PieChartSectionData(
         color: color,
-        value: report.totalAmount,
+        value: report.totalAmount * animValue,
         title: '',
         radius: 25,
         showTitle: false,
@@ -171,19 +186,18 @@ class AnalysisExpensesPage extends ConsumerWidget {
     }).toList();
   }
 
-  Widget _buildCategoryTile(
-    CategoryReport report,
-    Settings settings,
-    WidgetRef ref,
-  ) {
+  Widget _buildCategoryTile({
+    required CategoryReport report,
+    required Settings settings,
+    required WidgetRef ref,
+    required List<Budget> computedBudgets,
+    required AnalysisTimeFilter selectedFilter,
+  }) {
     final color = ColorGenerator.fromId(report.categoryId);
     final bgColor = ColorGenerator.fromIdLowOpacity(report.categoryId);
     final convertedAmount = report.totalAmount.toConverted(settings);
 
-    final analysisState = ref.watch(analysisNotifierProvider);
-    final budgetState = ref.watch(budgetNotifierProvider);
-
-    final budgetForThisCategory = budgetState.categoryBudgets.firstWhere(
+    final budgetForThisCategory = computedBudgets.firstWhere(
       (b) => b.categoryId == report.categoryId,
       orElse: () => Budget(
         id: '',
@@ -193,14 +207,12 @@ class AnalysisExpensesPage extends ConsumerWidget {
       ),
     );
 
-    final bool hasBudget = budgetForThisCategory.categoryId.isNotEmpty;
+    final bool hasBudget = budgetForThisCategory.id.isNotEmpty;
 
-    final adjustedLimit = budgetForThisCategory.getAdjustedLimit(
-      analysisState.selectedFilter,
-    );
+    final adjustedLimit = budgetForThisCategory.getAdjustedLimit(selectedFilter);
     final isOverlimit = budgetForThisCategory.checkIsOverlimit(
       report.totalAmount,
-      analysisState.selectedFilter,
+      selectedFilter,
     );
     final convertedAdjustedLimit = adjustedLimit.toConverted(settings);
 

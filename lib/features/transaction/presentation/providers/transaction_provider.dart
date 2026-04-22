@@ -45,6 +45,11 @@ final transactionFilterProvider = StateProvider.autoDispose<TransactionFilter>(
 
 final transactionSearchProvider = StateProvider.autoDispose<String>((ref) => "");
 
+final walletTransactionsProvider = Provider.autoDispose.family<List<Transaction>, String>((ref, walletId) {
+  final transactions = ref.watch(transactionsStreamProvider).value ?? [];
+  return transactions.where((tx) => tx.walletId == walletId || tx.toWalletId == walletId).toList();
+});
+
 final totalMonthlyExpenseProvider = Provider.autoDispose<double>((ref) {
   final transactions = ref.watch(transactionsStreamProvider).value ?? [];
   final now = DateTime.now();

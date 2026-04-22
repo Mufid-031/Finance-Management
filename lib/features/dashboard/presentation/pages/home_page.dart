@@ -8,6 +8,8 @@ import 'package:finance_management/features/dashboard/presentation/widgets/quick
 import 'package:finance_management/features/dashboard/presentation/widgets/recent_transactions.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
 
+import 'package:flutter_animate/flutter_animate.dart';
+
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -19,8 +21,7 @@ class HomePage extends ConsumerWidget {
     final themeBackground = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
-      backgroundColor:
-          themeBackground,
+      backgroundColor: themeBackground,
       body: walletAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text("Error: $err")),
@@ -29,17 +30,35 @@ class HomePage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              BalanceCard(balance: totalBalance),
+              BalanceCard(balance: totalBalance)
+                  .animate()
+                  .fadeIn(duration: 600.ms)
+                  .slideX(begin: -0.1),
               const SizedBox(height: 15),
-              const ListWalletCard(),
+              const ListWalletCard()
+                  .animate()
+                  .fadeIn(delay: 200.ms)
+                  .slideX(begin: 0.1),
               const SizedBox(height: 15),
-              const QuickActions(),
+              const QuickActions()
+                  .animate()
+                  .fadeIn(delay: 400.ms)
+                  .slideY(begin: 0.2),
               const SizedBox(height: 15),
-              const RecentTransactions(),
+              const RecentTransactions()
+                  .animate()
+                  .fadeIn(delay: 600.ms)
+                  .slideY(begin: 0.2),
               const SizedBox(height: 15),
-              const MonthlyBudgetCard(),
+              const MonthlyBudgetCard()
+                  .animate()
+                  .fadeIn(delay: 800.ms)
+                  .scaleXY(begin: 0.95),
               const SizedBox(height: 15),
-              const TimeAnalysisCard(),
+              const TimeAnalysisCard()
+                  .animate()
+                  .fadeIn(delay: 1000.ms)
+                  .slideY(begin: 0.2),
               const SizedBox(height: 15),
             ],
           ),

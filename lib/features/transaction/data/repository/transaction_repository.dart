@@ -8,7 +8,7 @@ abstract class TransactionRepository {
   Future<(List<TransactionDomain.Transaction>, dynamic)>
   getTransactionsPaginated(String userId, {dynamic lastCursor, int limit = 20});
 
-  Future<void> addTransaction(TransactionDomain.Transaction tx);
+  Future<Map<String, dynamic>?> addTransaction(TransactionDomain.Transaction tx);
   Future<void> updateTransaction(
     TransactionDomain.Transaction oldTx,
     TransactionDomain.Transaction newTx,

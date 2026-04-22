@@ -1,6 +1,6 @@
+import 'package:finance_management/core/shared/widgets/animated_currency_text.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
-import 'package:finance_management/core/utils/currency_formatter.dart';
-import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart'; // Import provider settings
+import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,8 +12,6 @@ class BalanceCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
-    final currencySymbol = ref.watch(settingsProvider).currencySymbol;
-
     final convertedBalance = balance * (settings.exchangeRate ?? 1.0);
 
     return Padding(
@@ -25,16 +23,15 @@ class BalanceCard extends ConsumerWidget {
             "Balance",
             style: TextStyle(fontSize: 26, color: AppColors.grey),
           ),
-          Text(
-            CurrencyFormatter.formatLocale(
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: AnimatedCurrencyText(
               amount: convertedBalance,
-              symbol: currencySymbol,
-              currencyCode: settings.currency,
-            ),
-            style: const TextStyle(
-              fontSize: 56,
-              color: AppColors.main,
-              fontWeight: FontWeight.bold,
+              style: const TextStyle(
+                fontSize: 56,
+                color: AppColors.main,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],

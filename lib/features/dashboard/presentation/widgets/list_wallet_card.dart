@@ -51,57 +51,61 @@ class ListWalletCard extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final convertedBalance = wallet.balance * (settings.exchangeRate ?? 1.0);
 
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 15),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.white.withValues(alpha: 0.05)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                IconData(wallet.iconCode, fontFamily: 'MaterialIcons'),
-                color: AppColors.main,
-                size: 20,
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  wallet.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.grey, fontSize: 13),
+    return GestureDetector(
+      onTap: () =>
+          context.pushNamed('wallet-detail', extra: wallet),
+      child: Container(
+        width: 150,
+        margin: const EdgeInsets.only(right: 15),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.white.withValues(alpha: 0.05)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundColor,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                Text(
-                  // Gunakan CurrencyFormatter agar konsisten
-                  CurrencyFormatter.formatLocaleCompact(
-                    amount: convertedBalance,
-                    symbol: settings.currencySymbol,
-                    currencyCode: settings.currency,
-                  ),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Icon(
+                  IconData(wallet.iconCode, fontFamily: 'MaterialIcons'),
+                  color: AppColors.main,
+                  size: 20,
                 ),
-              ],
-            ),
-          ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    wallet.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: AppColors.grey, fontSize: 13),
+                  ),
+                  Text(
+                    // Gunakan CurrencyFormatter agar konsisten
+                    CurrencyFormatter.formatLocaleCompact(
+                      amount: convertedBalance,
+                      symbol: settings.currencySymbol,
+                      currencyCode: settings.currency,
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

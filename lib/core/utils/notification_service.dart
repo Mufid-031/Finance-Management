@@ -40,6 +40,12 @@ class NotificationService {
 
     // PERBAIKAN: initialize sekarang menggunakan named parameter 'settings' di v21.0.0
     await _notificationsPlugin.initialize(settings: initializationSettings);
+
+    // BOSS, Minta izin eksplisit untuk Android 13+
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
   }
 
   Future<void> showNotification({

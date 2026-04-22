@@ -1,3 +1,4 @@
+import 'package:finance_management/core/shared/widgets/animated_percentage_text.dart';
 import 'package:finance_management/core/shared/widgets/section_header.dart';
 import 'package:finance_management/core/utils/currency_formatter.dart';
 import 'package:finance_management/core/utils/currency_helper.dart';
@@ -34,10 +35,9 @@ class MonthlyBudgetCard extends ConsumerWidget {
                 SectionHeader(title: "Monthly Budget"),
                 const SizedBox(height: 10),
                 const Text(
-                  "You haven't set a budget for this month.",
+                  "You haven't established a budget for this month.",
                   style: TextStyle(color: AppColors.grey),
-                ),
-                const SizedBox(height: 15),
+                ),                const SizedBox(height: 15),
                 ElevatedButton(
                   onPressed: () => context.push('/budgets'),
                   style: ElevatedButton.styleFrom(
@@ -113,40 +113,47 @@ class MonthlyBudgetCard extends ConsumerWidget {
                     flex: 1,
                     child: SizedBox(
                       height: 100,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          PieChart(
-                            PieChartData(
-                              sectionsSpace: 0,
-                              centerSpaceRadius: 30,
-                              startDegreeOffset: -90,
-                              sections: [
-                                PieChartSectionData(
-                                  value: percentUsed > 1 ? 1 : percentUsed,
-                                  color: percentUsed > 0.9
-                                      ? AppColors.expense
-                                      : AppColors.main,
-                                  radius: 12,
-                                  showTitle: false,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: percentUsed),
+                        duration: const Duration(milliseconds: 2000),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              PieChart(
+                                PieChartData(
+                                  sectionsSpace: 0,
+                                  centerSpaceRadius: 30,
+                                  startDegreeOffset: -90,
+                                  sections: [
+                                    PieChartSectionData(
+                                      value: value > 1 ? 1 : value,
+                                      color: value > 0.9
+                                          ? AppColors.expense
+                                          : AppColors.main,
+                                      radius: 12,
+                                      showTitle: false,
+                                    ),
+                                    PieChartSectionData(
+                                      value: value > 1 ? 0 : 1 - value,
+                                      color: AppColors.grey.withValues(alpha: 0.2),
+                                      radius: 12,
+                                      showTitle: false,
+                                    ),
+                                  ],
                                 ),
-                                PieChartSectionData(
-                                  value: percentUsed > 1 ? 0 : 1 - percentUsed,
-                                  color: AppColors.grey.withValues(alpha: 0.2),
-                                  radius: 12,
-                                  showTitle: false,
+                              ),
+                              Text(
+                                "${(value * 100).toStringAsFixed(0)}%",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
                                 ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            "$displayPercent%",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),

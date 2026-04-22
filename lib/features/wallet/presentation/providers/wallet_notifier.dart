@@ -62,15 +62,12 @@ class WalletNotifier extends StateNotifier<WalletState> {
 
   Future<void> deleteWallet(String walletId) async {
     try {
-      state = state.copyWith(isLoading: true);
-
       final userId = _ref.read(authStateChangesProvider).value?.uid;
       if (userId == null) throw Exception("User not authenticated");
 
       await _service.deleteWallet(userId, walletId);
-      state = state.copyWith(isLoading: false, errorMessage: null);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(errorMessage: e.toString());
     }
   }
 }

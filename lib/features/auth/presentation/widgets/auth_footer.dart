@@ -1,3 +1,4 @@
+import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class AuthFooter extends StatelessWidget {
@@ -15,12 +16,31 @@ class AuthFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(text, style: TextStyle(fontSize: 15)),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppColors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         TextButton(
           onPressed: onTap,
-          child: Text(actionText, style: TextStyle(fontSize: 15)),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            actionText,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.main,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ],
     );

@@ -1,6 +1,11 @@
 import 'dart:async';
+import 'package:finance_management/core/utils/notification_service.dart';
+import 'package:finance_management/features/category/domain/category.dart';
+import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
+import 'package:finance_management/features/notification/presentation/providers/notification_provider.dart';
 import 'package:finance_management/features/transaction/application/transaction_service.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'transaction_state.dart';
@@ -65,6 +70,60 @@ class TransactionNotifier extends StateNotifier<TransactionState> {
     await fetchInitialBatch();
   }
 
+  Future<void> _checkAndNotifyBudget(Map<String, dynamic> status) async {
+    final double limit = (status['limit'] as num).toDouble();
+    final double prevSpent = (status['previousSpent'] as num).toDouble();
+    final double newSpent = (status['newSpent'] as num).toDouble();
+    final String categoryId = status['categoryId'];
+    final userId = _ref.read(authStateChangesProvider).value?.uid;
+
+    if (limit <= 0) return;
+
+    final prevPercent = prevSpent / limit;
+    final newPercent = newSpent / limit;
+    
+    // BOSS, Gunakan asData untuk akses sinkron yang aman
+    final categories = _ref.read(categoriesStreamProvider).asData?.value ?? [];
+    final category = categories.firstWhere(
+      (c) => c.id == categoryId,
+      orElse: () => Category(
+        id: categoryId,
+        name: 'Spending',
+        icon: Icons.shopping_cart,
+        type: CategoryType.expense,
+      ),
+    );
+
+    String? title;
+    String? body;
+
+    if (newPercent >= 1.0 && prevPercent < 1.0) {
+      title = "Budget Exceeded! ⚠️";
+      body = "Pengeluaran untuk ${category.name} sudah melebihi limit.";
+    } else if (newPercent >= 0.8 && prevPercent < 0.8) {
+      title = "Budget Warning 📉";
+      body = "Pengeluaran ${category.name} sudah mencapai 80% dari limit.";
+    }
+
+    if (title != null && body != null) {
+      // 1. Munculkan Notifikasi HP (Local)
+      NotificationService().showNotification(
+        id: categoryId.hashCode,
+        title: title,
+        body: body,
+      );
+
+      // 2. Simpan ke Riwayat (Firestore)
+      if (userId != null) {
+        await _ref.read(notificationApplicationServiceProvider).addNotification(
+              userId: userId,
+              title: title,
+              body: body,
+            );
+      }
+    }
+  }
+
   Future<void> addTransaction({
     required String title,
     required double amount,
@@ -91,7 +150,12 @@ class TransactionNotifier extends StateNotifier<TransactionState> {
         date: date ?? DateTime.now(),
       );
 
-      await _service.saveTransaction(tx);
+      final budgetStatus = await _service.saveTransaction(tx);
+      
+      if (budgetStatus != null) {
+        await _checkAndNotifyBudget(budgetStatus);
+      }
+
       // BOSS, setelah tambah baru, lebih aman refresh list atau masukkan ke index 0
       state = state.copyWith(isLoading: false, transactions: [tx, ...state.transactions]);
     } catch (e) {

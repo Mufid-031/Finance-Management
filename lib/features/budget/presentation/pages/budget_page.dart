@@ -1,6 +1,8 @@
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:finance_management/core/shared/widgets/custom_filter_tabs.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
 import 'package:finance_management/core/utils/currency_helper.dart';
+import 'package:finance_management/core/utils/error_utils.dart';
 import 'package:finance_management/features/budget/presentation/widgets/active_budget_view.dart';
 import 'package:finance_management/features/budget/presentation/widgets/add_category_budget_modal.dart';
 import 'package:finance_management/features/budget/presentation/widgets/budget_history_view.dart';
@@ -42,15 +44,19 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
             currentIndex: _currentTab,
             onTabChanged: (index) => setState(() => _currentTab = index),
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          ),
+          ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2, end: 0),
           Expanded(
-            child: _currentTab == 0
-                ? ActiveBudgetView(
-                    onSetupPressed: () => _showSetupBottomSheet(context, ref),
-                    onAddCategoryPressed: () =>
-                        _showAddCategoryBudget(context, ref),
-                  )
-                : const BudgetHistoryView(),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _currentTab == 0
+                  ? ActiveBudgetView(
+                      key: const ValueKey(0),
+                      onSetupPressed: () => _showSetupBottomSheet(context, ref),
+                      onAddCategoryPressed: () =>
+                          _showAddCategoryBudget(context, ref),
+                    )
+                  : const BudgetHistoryView(key: ValueKey(1)),
+            ),
           ),
         ],
       ),
@@ -132,14 +138,17 @@ class _BudgetPageState extends ConsumerState<BudgetPage> {
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   final amount = double.tryParse(controller.text) ?? 0.0;
                   final limit = amount.toBase(settings);
                   if (limit > 0) {
-                    ref
+                    await ref
                         .read(budgetNotifierProvider.notifier)
                         .setupMonthlyBudget(limit);
-                    Navigator.pop(context);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      ErrorUtils.showSuccess(context, "Monthly limit saved!");
+                    }
                   }
                 },
                 child: const Text(

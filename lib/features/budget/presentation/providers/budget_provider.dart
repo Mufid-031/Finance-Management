@@ -52,6 +52,17 @@ final monthlySummariesStreamProvider = StreamProvider.autoDispose<List<MonthlySu
   return service.watchAllSummaries(user.uid);
 });
 
+final historicalBudgetsProvider = StreamProvider.autoDispose.family<List<Budget>, String>((ref, summaryId) {
+  final authStateAsync = ref.watch(authStateChangesProvider);
+  final user = authStateAsync.value;
+
+  if (user == null) return Stream.value([]);
+
+  final service = ref.watch(budgetServiceProvider);
+  // We need to fetch by summaryId directly. Let's check budget_service.dart first to see if it's supported.
+  return service.watchBudgetsById(user.uid, summaryId);
+});
+
 final computedBudgetsProvider = Provider.autoDispose<List<Budget>>((ref) {
   final budgetState = ref.watch(budgetNotifierProvider);
   final transactionsAsync = ref.watch(transactionsStreamProvider);

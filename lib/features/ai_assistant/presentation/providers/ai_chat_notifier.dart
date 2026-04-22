@@ -1,5 +1,6 @@
 import 'package:finance_management/features/ai_assistant/application/ai_assistant_service.dart';
 import 'package:finance_management/features/ai_assistant/presentation/providers/ai_assistant_provider.dart';
+import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
 import 'package:finance_management/features/category/presentation/providers/category_provider.dart';
 import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
@@ -73,6 +74,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       final wallets = _ref.read(walletsStreamProvider).value ?? [];
       final categories = _ref.read(categoriesStreamProvider).value ?? [];
       final transactions = _ref.read(transactionsStreamProvider).value ?? [];
+      final budgets = _ref.read(computedBudgetsProvider);
       final totalBalance = _ref.read(totalBalanceProvider);
 
       final response = await _service.chatWithAI(
@@ -80,6 +82,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
         wallets: wallets,
         categories: categories,
         transactions: transactions,
+        budgets: budgets,
         totalBalance: totalBalance,
         mainCurrency: "IDR",
       );
@@ -95,7 +98,7 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       );
     } catch (e) {
       final errorMsg = ChatMessage(
-        text: "Maaf BOSS, saya sedang gangguan: $e",
+        text: "Mohon maaf, sistem sedang mengalami gangguan teknis: $e",
         isUser: false,
         timestamp: DateTime.now(),
       );

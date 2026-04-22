@@ -34,26 +34,12 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
     });
 
     _budgetsSubscription = _service.watchBudgets(userId, now).listen((budgets) {
-      _updateBudgetsWithTransactions(budgets);
+      state = state.copyWith(categoryBudgets: budgets, isLoading: false);
     });
   }
 
-  void _updateBudgetsWithTransactions(List<Budget> budgets) {
-    final transactionsAsync = _ref.watch(transactionsStreamProvider);
-
-    transactionsAsync.whenData((transactions) {
-      final updatedBudgets = budgets.map((budget) {
-        final actualSpent = _service.calculateSpentForCategory(
-          transactions,
-          budget.categoryId,
-        );
-
-        return budget.copyWith(spentAmount: actualSpent);
-      }).toList();
-
-      state = state.copyWith(categoryBudgets: updatedBudgets, isLoading: false);
-    });
-  }
+  // Remove _updateBudgetsWithTransactions as it's an anti-pattern and buggy here
+  // The spent calculation is better handled by computedBudgetsProvider
 
   Future<void> setupMonthlyBudget(double limit) async {
     try {
@@ -62,6 +48,7 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
 
       state = state.copyWith(isLoading: true);
       await _service.setupMonthlyBudget(userId, limit);
+      state = state.copyWith(isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
@@ -72,9 +59,11 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
       final userId = _ref.read(authStateChangesProvider).value?.uid;
       if (userId == null) throw Exception("User not authenticated");
 
+      state = state.copyWith(isLoading: true);
       await _service.addCategoryBudget(userId, categoryId, limit);
+      state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(errorMessage: e.toString());
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 
@@ -83,9 +72,11 @@ class BudgetNotifier extends StateNotifier<BudgetState> {
       final userId = _ref.read(authStateChangesProvider).value?.uid;
       if (userId == null) throw Exception("User not authenticated");
 
+      state = state.copyWith(isLoading: true);
       await _service.deleteCategoryBudget(userId, summaryId, budgetId);
+      state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(errorMessage: e.toString());
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
     }
   }
 

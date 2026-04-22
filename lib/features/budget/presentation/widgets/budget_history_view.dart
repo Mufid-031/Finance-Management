@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/features/budget/presentation/providers/budget_provider.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
 
+import 'package:go_router/go_router.dart';
+
 class BudgetHistoryView extends ConsumerWidget {
   const BudgetHistoryView({super.key});
 
@@ -45,31 +47,49 @@ class BudgetHistoryView extends ConsumerWidget {
 
             final convertedTotalLimit = s.totalLimit.toConverted(settings);
 
-            return Card(
+            return Container(
               margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
+              decoration: BoxDecoration(
+                color: AppColors.widgetColor,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
               child: ListTile(
-                leading: const Icon(
-                  Icons.history_rounded,
-                  color: AppColors.main,
+                onTap: () => context.pushNamed('monthly-budget-history-detail', extra: s),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.main.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.history_rounded,
+                    color: AppColors.main,
+                    size: 24,
+                  ),
                 ),
                 title: Text(
                   "${months[s.month]} ${s.year}",
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text("${s.categoryCount} Categories"),
-                trailing: Text(
-                  CurrencyFormatter.formatLocaleCompact(
-                    amount: convertedTotalLimit,
-                    symbol: settings.currencySymbol,
-                    currencyCode: settings.currency,
-                  ),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      CurrencyFormatter.formatLocaleCompact(
+                        amount: convertedTotalLimit,
+                        symbol: settings.currencySymbol,
+                        currencyCode: settings.currency,
+                      ),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right_rounded, color: AppColors.grey),
+                  ],
                 ),
               ),
             );

@@ -1,3 +1,4 @@
+import 'package:finance_management/core/shared/widgets/animated_currency_text.dart';
 import 'package:finance_management/core/shared/widgets/custom_chip_filter.dart';
 import 'package:finance_management/core/shared/widgets/section_header.dart';
 import 'package:finance_management/core/utils/color_generator.dart';
@@ -14,6 +15,7 @@ import 'package:finance_management/features/analysis/presentation/providers/anal
 import 'package:finance_management/features/analysis/presentation/providers/analysis_state.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class AnalysisPage extends ConsumerStatefulWidget {
   const AnalysisPage({super.key});
@@ -67,7 +69,7 @@ class _AnalysisPageState extends ConsumerState<AnalysisPage> {
                     .read(analysisNotifierProvider.notifier)
                     .changeFilter(newPeriod);
               },
-            ),
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.2),
             const SizedBox(height: 25),
 
             TimeAnalysisChart(
@@ -77,34 +79,29 @@ class _AnalysisPageState extends ConsumerState<AnalysisPage> {
                     .read(analysisNotifierProvider.notifier)
                     .changeFilter(_mapPeriodToFilter(newPeriod));
               },
-            ),
-
+            ).animate().fadeIn(delay: 200.ms).scaleXY(begin: 0.95),
             const SizedBox(height: 25),
 
-            _buildComparisonSection(analysisState),
+            _buildComparisonSection(analysisState)
+                .animate()
+                .fadeIn(delay: 400.ms)
+                .slideX(begin: 0.1),
             const SizedBox(height: 30),
 
             SectionHeader(title: "Balance"),
             const SizedBox(height: 10),
-            Text(
-              CurrencyFormatter.formatLocale(
-                amount: convertedTotalBalance,
-                symbol: settings.currencySymbol,
-                currencyCode: settings.currency,
-              ),
-              style: const TextStyle(
-                fontSize: 32,
-                color: AppColors.main,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+
+            AnimatedCurrencyText(
+              amount: convertedTotalBalance,
+              style: const TextStyle(color: AppColors.main, fontSize: 28),
+            ).animate().fadeIn(delay: 600.ms).slideX(begin: -0.1),
             const SizedBox(height: 10),
+
             walletsAsync.when(
               data: (wallets) => WalletAnalysisList(wallets: wallets),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Text("Error: $err"),
-            ),
-
+            ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.2),
             const SizedBox(height: 30),
 
             SectionHeader(
@@ -114,7 +111,10 @@ class _AnalysisPageState extends ConsumerState<AnalysisPage> {
               },
             ),
             const SizedBox(height: 15),
-            _buildTopCategories(analysisState),
+            _buildTopCategories(analysisState)
+                .animate()
+                .fadeIn(delay: 1000.ms)
+                .slideY(begin: 0.2),
           ],
         ),
       ),

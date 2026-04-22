@@ -1,4 +1,5 @@
 import 'package:finance_management/core/utils/currency_helper.dart';
+import 'package:finance_management/core/utils/error_utils.dart';
 import 'package:finance_management/features/ai_assistant/presentation/providers/ai_assistant_provider.dart';
 import 'package:finance_management/features/category/domain/category.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
@@ -151,7 +152,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           ),
           const SizedBox(height: 30),
           Text(
-            "Tambah Transaksi",
+            "New Transaction",
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -160,7 +161,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           ),
           const SizedBox(height: 10),
           const Text(
-            "Pilih metode input untuk mencatat pengeluaran Anda hari ini.",
+            "Select an input method to record your financial activity.",
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.grey, fontSize: 14),
           ),
@@ -200,7 +201,6 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
     txState, {
     required Key key,
   }) {
-    final theme = Theme.of(context);
     final filteredCategories = allCategories
         .where(
           (c) =>
@@ -210,6 +210,12 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                   : selectedType.index),
         )
         .toList();
+
+    final Color accentColor = selectedType == TransactionType.expense
+        ? AppColors.red
+        : (selectedType == TransactionType.income
+            ? AppColors.main
+            : Colors.blueAccent);
 
     return Padding(
       key: key,
@@ -225,124 +231,167 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader("Manual Input"),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-            if (txState.errorMessage != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  txState.errorMessage!,
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 12),
-                ),
+            // TYPE SELECTOR
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppColors.widgetColor,
+                borderRadius: BorderRadius.circular(18),
               ),
+              child: Row(
+                children: [
+                  _TypeButton(
+                    label: "Expense",
+                    type: TransactionType.expense,
+                    current: selectedType,
+                    color: AppColors.red,
+                    onTap: (t) => setState(() {
+                      selectedType = t;
+                      selectedCategoryId = null;
+                    }),
+                  ),
+                  _TypeButton(
+                    label: "Income",
+                    type: TransactionType.income,
+                    current: selectedType,
+                    color: AppColors.main,
+                    onTap: (t) => setState(() {
+                      selectedType = t;
+                      selectedCategoryId = null;
+                    }),
+                  ),
+                  _TypeButton(
+                    label: "Transfer",
+                    type: TransactionType.transfer,
+                    current: selectedType,
+                    color: Colors.blueAccent,
+                    onTap: (t) => setState(() {
+                      selectedType = t;
+                      selectedCategoryId = null;
+                      selectedToWalletId = null;
+                    }),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 25),
 
-            Row(
-              children: [
-                _TypeButton(
-                  label: "Expense",
-                  type: TransactionType.expense,
-                  current: selectedType,
-                  onTap: (t) => setState(() {
-                    selectedType = t;
-                    selectedCategoryId = null;
-                  }),
-                ),
-                const SizedBox(width: 8),
-                _TypeButton(
-                  label: "Income",
-                  type: TransactionType.income,
-                  current: selectedType,
-                  onTap: (t) => setState(() {
-                    selectedType = t;
-                    selectedCategoryId = null;
-                  }),
-                ),
-                const SizedBox(width: 8),
-                _TypeButton(
-                  label: "Transfer",
-                  type: TransactionType.transfer,
-                  current: selectedType,
-                  onTap: (t) => setState(() {
-                    selectedType = t;
-                    selectedCategoryId = null;
-                    selectedToWalletId = null;
-                  }),
-                ),
-              ],
+            // AMOUNT CARD
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              decoration: BoxDecoration(
+                color: AppColors.widgetColor,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: accentColor.withValues(alpha: 0.1)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Amount",
+                    style: TextStyle(color: AppColors.grey, fontSize: 12),
+                  ),
+                  TextField(
+                    controller: amountController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: accentColor,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: "0.00",
+                      hintStyle: TextStyle(color: accentColor.withValues(alpha: 0.2)),
+                      prefixText: "${settings.currencySymbol} ",
+                      prefixStyle: TextStyle(fontSize: 24, color: AppColors.grey),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
-            TextField(
-              controller: amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.main,
-              ),
-              decoration: InputDecoration(
-                hintText: "0.00",
-                hintStyle: const TextStyle(color: Colors.grey),
-                prefixText: "${settings.currencySymbol} ",
-                border: InputBorder.none,
-              ),
-            ),
+
+            // NOTE INPUT
             TextField(
               controller: nameController,
-              style: TextStyle(color: theme.colorScheme.onSurface),
+              style: const TextStyle(fontWeight: FontWeight.w500),
               decoration: InputDecoration(
+                labelText: "What's this for?",
+                labelStyle: const TextStyle(color: AppColors.grey),
                 hintText: selectedType == TransactionType.transfer
-                    ? "Catatan (misal: Pindah tabungan)"
-                    : "Catatan (misal: Makan siang)",
-                hintStyle: const TextStyle(color: AppColors.grey),
-                border: InputBorder.none,
+                    ? "Transfer note"
+                    : "e.g. Dinner, Salary, etc.",
+                prefixIcon: const Icon(Icons.description_outlined, color: AppColors.main),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: AppColors.widgetColor,
               ),
             ),
-            const Divider(),
-            _SectionTitle(
-              selectedType == TransactionType.transfer
-                  ? "Dari Dompet"
-                  : "Sumber Dompet",
+            const SizedBox(height: 25),
+
+            // WALLET & CATEGORY SELECTORS
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCompactSelector(
+                    label: selectedType == TransactionType.transfer ? "From" : "Wallet",
+                    value: wallets
+                        .where((w) => w.id == selectedWalletId)
+                        .map((w) => w.name)
+                        .firstWhere((_) => true, orElse: () => wallets.isNotEmpty ? wallets.first.name : "Select"),
+                    icon: Icons.account_balance_wallet_outlined,
+                    onTap: () => _showWalletPicker(wallets),
+                  ),
+                ),
+                if (selectedType == TransactionType.transfer) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildCompactSelector(
+                      label: "To",
+                      value: selectedToWalletId != null
+                          ? wallets.firstWhere((w) => w.id == selectedToWalletId).name
+                          : "Select",
+                      icon: Icons.login_rounded,
+                      onTap: () => _showToWalletPicker(wallets),
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildCompactSelector(
+                      label: "Category",
+                      value: selectedCategoryId != null
+                          ? allCategories
+                              .firstWhere((c) => c.id == selectedCategoryId)
+                              .name
+                          : "Select",
+                      icon: Icons.category_outlined,
+                      onTap: () => _showCategoryPicker(filteredCategories),
+                    ),
+                  ),
+                ],
+              ],
             ),
-            _buildWalletSelector(
-              wallets,
-              selectedWalletId,
-              (id) => setState(() => selectedWalletId = id),
-            ),
-            if (selectedType == TransactionType.transfer) ...[
-              const SizedBox(height: 20),
-              const _SectionTitle("Ke Dompet"),
-              _buildWalletSelector(
-                wallets.where((w) => w.id != selectedWalletId).toList(),
-                selectedToWalletId,
-                (id) => setState(() => selectedToWalletId = id),
-              ),
-            ],
-            if (selectedType != TransactionType.transfer) ...[
-              const SizedBox(height: 20),
-              const _SectionTitle("Kategori"),
-              _buildCategorySelector(
-                filteredCategories,
-                selectedCategoryId,
-                (id) => setState(() => selectedCategoryId = id),
-              ),
-            ],
-            const SizedBox(height: 30),
+
+            const SizedBox(height: 35),
             SizedBox(
               width: double.infinity,
+              height: 60,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.main,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  foregroundColor: Colors.black,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(18),
                   ),
                 ),
                 onPressed: txState.isLoading ? null : _submitData,
@@ -356,15 +405,15 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
                         ),
                       )
                     : const Text(
-                        "Konfirmasi",
+                        "Confirm Transaction",
                         style: TextStyle(
-                          color: Colors.black,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -379,14 +428,14 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildHeader("AI Assistant"),
+          _buildHeader("Vantage AI"),
           const SizedBox(height: 20),
           const Icon(Icons.auto_awesome, color: AppColors.main, size: 50)
               .animate(onPlay: (c) => c.repeat())
               .shimmer(duration: 2.seconds, color: Colors.white24),
           const SizedBox(height: 15),
           Text(
-            aiState.isListening ? "Mendengarkan..." : "Bicara pada BOSS AI",
+            aiState.isListening ? "Listening..." : "Speak with Vantage AI",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -418,7 +467,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
             ),
             child: Text(
               aiState.speechText.isEmpty
-                  ? "Contoh: 'Makan siang 50rb dari Cash'"
+                  ? "Example: 'Lunch 50k from Cash'"
                   : aiState.speechText,
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -449,37 +498,30 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
 
           GestureDetector(
             onTap: aiNotifier.toggleListening,
-            child:
-                Container(
-                      width: 75,
-                      height: 75,
-                      decoration: BoxDecoration(
-                        color: aiState.isListening
-                            ? Colors.redAccent
-                            : AppColors.main,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                (aiState.isListening
-                                        ? Colors.redAccent
-                                        : AppColors.main)
-                                    .withValues(alpha: 0.4),
-                            blurRadius: 15,
-                            spreadRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        aiState.isListening ? Icons.stop : Icons.mic,
-                        color: aiState.isListening
-                            ? Colors.white
-                            : Colors.black,
-                        size: 32,
-                      ),
-                    )
-                    .animate(target: aiState.isListening ? 1 : 0)
-                    .scale(duration: 400.ms),
+            child: Container(
+              width: 75,
+              height: 75,
+              decoration: BoxDecoration(
+                color: aiState.isListening ? Colors.redAccent : AppColors.main,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        (aiState.isListening
+                                ? Colors.redAccent
+                                : AppColors.main)
+                            .withValues(alpha: 0.4),
+                    blurRadius: 15,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Icon(
+                aiState.isListening ? Icons.stop : Icons.mic,
+                color: aiState.isListening ? Colors.white : Colors.black,
+                size: 32,
+              ),
+            ),
           ),
           const SizedBox(height: 30),
         ],
@@ -516,74 +558,131 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
     );
   }
 
-  Widget _buildWalletSelector(
-    List<Wallet> wallets,
-    String? selectedId,
-    Function(String) onSelect,
-  ) {
-    final theme = Theme.of(context);
-    if (wallets.isEmpty) return const Text("No wallets available");
-    return SizedBox(
-      height: 45,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: wallets
-            .map<Widget>(
-              (w) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(
-                    w.name,
-                    style: TextStyle(
-                      color: selectedId == w.id
-                          ? Colors.black
-                          : theme.colorScheme.onSurface,
-                    ),
+  Widget _buildCompactSelector({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.widgetColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(color: AppColors.grey, fontSize: 11)),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(icon, size: 16, color: AppColors.main),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  selected: selectedId == w.id,
-                  onSelected: (_) => onSelect(w.id),
-                  selectedColor: AppColors.main,
-                  backgroundColor: theme.colorScheme.surface,
                 ),
-              ),
-            )
-            .toList(),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCategorySelector(
-    List<Category> categories,
-    String? selectedId,
-    Function(String) onSelect,
-  ) {
-    final theme = Theme.of(context);
-    if (categories.isEmpty) return const Text("No categories available");
-    return SizedBox(
-      height: 45,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: categories
-            .map<Widget>(
-              (c) => Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(
-                    c.name,
-                    style: TextStyle(
-                      color: selectedId == c.id
-                          ? Colors.black
-                          : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  selected: selectedId == c.id,
-                  onSelected: (_) => onSelect(c.id),
-                  selectedColor: AppColors.main,
-                  backgroundColor: theme.colorScheme.surface,
-                ),
+  void _showWalletPicker(List<Wallet> wallets) {
+    _showPickerModal(
+      title: "Select Wallet",
+      items: wallets.map((w) => _PickerItem(
+        id: w.id,
+        label: w.name,
+        icon: IconData(w.iconCode, fontFamily: 'MaterialIcons'),
+      )).toList(),
+      selectedId: selectedWalletId,
+      onSelect: (id) => setState(() => selectedWalletId = id),
+    );
+  }
+
+  void _showToWalletPicker(List<Wallet> wallets) {
+    _showPickerModal(
+      title: "Transfer To",
+      items: wallets
+          .where((w) => w.id != selectedWalletId)
+          .map((w) => _PickerItem(
+                id: w.id,
+                label: w.name,
+                icon: IconData(w.iconCode, fontFamily: 'MaterialIcons'),
+              ))
+          .toList(),
+      selectedId: selectedToWalletId,
+      onSelect: (id) => setState(() => selectedToWalletId = id),
+    );
+  }
+
+  void _showCategoryPicker(List<Category> categories) {
+    _showPickerModal(
+      title: "Select Category",
+      items: categories.map((c) => _PickerItem(
+        id: c.id,
+        label: c.name,
+        icon: c.icon,
+      )).toList(),
+      selectedId: selectedCategoryId,
+      onSelect: (id) => setState(() => selectedCategoryId = id),
+    );
+  }
+
+  void _showPickerModal({
+    required String title,
+    required List<_PickerItem> items,
+    required String? selectedId,
+    required Function(String) onSelect,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.backgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  final isSelected = item.id == selectedId;
+                  return ListTile(
+                    onTap: () {
+                      onSelect(item.id);
+                      Navigator.pop(context);
+                    },
+                    leading: Icon(item.icon, color: isSelected ? AppColors.main : AppColors.grey),
+                    title: Text(item.label, style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? AppColors.main : Colors.white,
+                    )),
+                    trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.main) : null,
+                  );
+                },
               ),
-            )
-            .toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -598,9 +697,7 @@ class _AddTransactionModalState extends ConsumerState<AddTransactionModal> {
         (isTransfer && selectedToWalletId == null) ||
         inputAmount == null ||
         inputAmount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Mohon lengkapi data dengan benar")),
-      );
+      ErrorUtils.showError(context, "Mohon lengkapi data dengan benar");
       return;
     }
 
@@ -699,51 +796,40 @@ class _ChoiceCard extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle(this.title);
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Text(
-      title,
-      style: const TextStyle(
-        color: AppColors.grey,
-        fontWeight: FontWeight.bold,
-        fontSize: 12,
-      ),
-    ),
-  );
+class _PickerItem {
+  final String id;
+  final String label;
+  final IconData icon;
+  _PickerItem({required this.id, required this.label, required this.icon});
 }
 
 class _TypeButton extends StatelessWidget {
   final String label;
   final TransactionType type;
   final TransactionType current;
+  final Color color;
   final Function(TransactionType) onTap;
+
   const _TypeButton({
     required this.label,
     required this.type,
     required this.current,
+    required this.color,
     required this.onTap,
   });
+
   @override
   Widget build(BuildContext context) {
     final isSelected = type == current;
-    final theme = Theme.of(context);
     return Expanded(
-      child: InkWell(
+      child: GestureDetector(
         onTap: () => onTap(type),
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.main : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.main
-                  : AppColors.grey.withValues(alpha: 0.3),
-            ),
+            color: isSelected ? color : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Center(
             child: Text(
@@ -751,7 +837,7 @@ class _TypeButton extends StatelessWidget {
               style: TextStyle(
                 color: isSelected ? Colors.black : AppColors.grey,
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: 13,
               ),
             ),
           ),

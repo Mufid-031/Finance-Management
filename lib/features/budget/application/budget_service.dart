@@ -23,6 +23,10 @@ class BudgetService {
     return _repository.watchCategoryBudgets(userId, summaryId);
   }
 
+  Stream<List<Budget>> watchBudgetsById(String userId, String summaryId) {
+    return _repository.watchCategoryBudgets(userId, summaryId);
+  }
+
   Future<void> setupMonthlyBudget(String userId, double totalLimit) async {
     final now = DateTime.now();
     final summaryId = generateSummaryId(now);

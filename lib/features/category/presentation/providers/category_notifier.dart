@@ -45,16 +45,12 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
 
   Future<void> deleteCategory(String categoryId) async {
     try {
-      state = state.copyWith(isLoading: true, errorMessage: null);
-
       final userId = _ref.read(authStateChangesProvider).value?.uid;
       if (userId == null) throw Exception("User not authenticated");
 
       await _service.deleteCategory(userId, categoryId);
-
-      state = state.copyWith(isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(errorMessage: e.toString());
     }
   }
 }

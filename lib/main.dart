@@ -25,6 +25,7 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider); // Pantau tema di sini
 
     return MaterialApp.router(
+      title: 'Fintrack',
       debugShowCheckedModeBanner: false,
       routerConfig: router,
       themeMode: themeMode, // Hubungkan status tema

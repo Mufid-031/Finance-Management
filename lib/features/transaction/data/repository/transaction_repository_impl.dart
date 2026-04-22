@@ -43,7 +43,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<void> addTransaction(domain.Transaction tx) async {
+  Future<Map<String, dynamic>?> addTransaction(domain.Transaction tx) async {
     final dto = TransactionDTO.fromDomain(tx);
     return datasource.createTransaction(
       userId: tx.userId,

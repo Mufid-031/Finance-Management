@@ -1,4 +1,5 @@
 import 'package:finance_management/features/analysis/application/analysis_service.dart';
+import 'package:finance_management/features/analysis/application/report_service.dart';
 import 'package:finance_management/features/analysis/data/datasource/analysis_firestore_datasorce.dart';
 import 'package:finance_management/features/analysis/data/repository/analysis_repository.dart';
 import 'package:finance_management/features/analysis/data/repository/analysis_repository_impl.dart';
@@ -18,6 +19,10 @@ final analysisRepositoryProvider = Provider<AnalysisRepository>((ref) {
 
 final analysisServiceProvider = Provider((ref) {
   return AnalysisService();
+});
+
+final reportServiceProvider = Provider((ref) {
+  return ReportService();
 });
 
 final analysisNotifierProvider =

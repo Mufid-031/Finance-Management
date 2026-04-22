@@ -5,7 +5,7 @@ class TransactionService {
   final TransactionRepository repository;
   TransactionService(this.repository);
 
-  Future<void> saveTransaction(Transaction tx) async {
+  Future<Map<String, dynamic>?> saveTransaction(Transaction tx) async {
     return await repository.addTransaction(tx);
   }
 

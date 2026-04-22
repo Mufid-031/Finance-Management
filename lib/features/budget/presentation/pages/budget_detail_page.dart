@@ -1,4 +1,10 @@
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:finance_management/core/shared/widgets/date_separator.dart';
+import 'package:finance_management/core/shared/widgets/transaction_item_tile.dart';
 import 'package:finance_management/core/utils/currency_formatter.dart';
+import 'package:finance_management/core/utils/date_formatter.dart';
+import 'package:finance_management/features/transaction/presentation/providers/transaction_provider.dart';
+import 'package:finance_management/features/transaction/domain/transaction.dart';
 import 'package:finance_management/core/utils/currency_helper.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:flutter/material.dart';
@@ -44,14 +50,71 @@ class BudgetDetailPage extends ConsumerWidget {
             orElse: () => categories.first,
           );
 
+          final transactions = ref.watch(transactionsStreamProvider).value ?? [];
+          
+          // Parse summaryId (YYYY_MM) to get year and month
+          final parts = latestBudget.monthlySummaryId.split('_');
+          final bYear = int.tryParse(parts[0]) ?? 0;
+          final bMonth = int.tryParse(parts[1]) ?? 0;
+
+          final categoryTransactions = transactions.where((tx) =>
+              tx.categoryId == latestBudget.categoryId &&
+              tx.date.year == bYear &&
+              tx.date.month == bMonth).toList();
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(25),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Gunakan latestBudget, bukan budget
-                _buildProgressHeader(category.name, latestBudget, ref),
+                Center(child: _buildProgressHeader(category.name, latestBudget, ref))
+                    .animate()
+                    .fadeIn(duration: 600.ms)
+                    .scale(begin: const Offset(0.9, 0.9)),
                 const SizedBox(height: 40),
-                _buildInfoSection(latestBudget, ref),
+                _buildInfoSection(latestBudget, ref)
+                    .animate()
+                    .fadeIn(duration: 600.ms, delay: 200.ms)
+                    .slideY(begin: 0.1, end: 0),
+                const SizedBox(height: 40),
+                const Text(
+                  "Recent Transactions",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ).animate().fadeIn(delay: 400.ms),
+                const SizedBox(height: 15),
+                if (categoryTransactions.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(
+                      child: Text(
+                        "No transactions in this category for this month.",
+                        style: TextStyle(color: AppColors.grey),
+                      ),
+                    ),
+                  ).animate().fadeIn(delay: 500.ms)
+                else
+                  ...categoryTransactions.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final tx = entry.value;
+                    final dateLabel = DateFormatter.getNiceDateLabel(tx.date);
+                    bool showHeader = index == 0 ||
+                        DateFormatter.getNiceDateLabel(tx.date) !=
+                            DateFormatter.getNiceDateLabel(
+                              categoryTransactions[index - 1].date,
+                            );
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (showHeader) DateSeparator(date: dateLabel),
+                        TransactionItemTile(tx: tx, category: category),
+                      ],
+                    )
+                        .animate()
+                        .fadeIn(duration: 400.ms, delay: (500 + (index * 50)).ms)
+                        .slideX(begin: 0.05, end: 0);
+                  }),
+                const SizedBox(height: 30),
               ],
             ),
           );
@@ -70,40 +133,45 @@ class BudgetDetailPage extends ConsumerWidget {
     final convertedLimit = budget.limitAmount.toConverted(settings);
     final convertedSpend = budget.spentAmount.toConverted(settings);
 
-    final percent = convertedLimit > 0
-        ? (convertedSpend / convertedLimit)
-        : 0.0;
-    final isOverBudget = convertedSpend > convertedLimit;
+    final percent = convertedLimit > 0 ? (convertedSpend / convertedLimit) : 0.0;
 
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: CircularProgressIndicator(
-                value: percent > 1.0 ? 1.0 : percent,
-                strokeWidth: 15,
-                backgroundColor: AppColors.grey.withValues(alpha: 0.1),
-                color: isOverBudget ? AppColors.red : AppColors.main,
-                strokeCap: StrokeCap.round,
-              ),
-            ),
-            Column(
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: percent),
+          duration: const Duration(milliseconds: 2000),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            final isOverBudget = value > 1.0;
+            return Stack(
+              alignment: Alignment.center,
               children: [
-                Text(
-                  "${(percent * 100).toStringAsFixed(0)}%",
-                  style: const TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
+                SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: CircularProgressIndicator(
+                    value: value > 1.0 ? 1.0 : value,
+                    strokeWidth: 15,
+                    backgroundColor: AppColors.grey.withValues(alpha: 0.1),
+                    color: isOverBudget ? AppColors.red : AppColors.main,
+                    strokeCap: StrokeCap.round,
                   ),
                 ),
-                Text("Used", style: TextStyle(color: AppColors.grey)),
+                Column(
+                  children: [
+                    Text(
+                      "${(value * 100).toStringAsFixed(0)}%",
+                      style: const TextStyle(
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Text("Used", style: TextStyle(color: AppColors.grey)),
+                  ],
+                ),
               ],
-            ),
-          ],
+            );
+          },
         ),
         const SizedBox(height: 25),
         Text(

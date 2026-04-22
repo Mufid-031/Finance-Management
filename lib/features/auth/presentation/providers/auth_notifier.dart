@@ -19,9 +19,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final user = await service.loginWithGoogle();
       
-      // BOSS, kita jalankan onboarding juga di sini jika datanya kosong
-      // (Bisa dicek via repository, tapi untuk sekarang kita pastikan minimal kategori ada)
-      await _runOnboarding(user.id);
+      // BOSS, Jalankan onboarding HANYA jika ini user baru
+      if (user.isNewUser) {
+        await _runOnboarding(user.id);
+      }
       
       state = state.copyWith(user: user, isLoading: false);
     } on FirebaseAuthException catch (e) {

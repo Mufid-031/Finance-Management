@@ -13,6 +13,7 @@ import 'package:finance_management/features/transaction/presentation/providers/t
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class TransactionPage extends ConsumerStatefulWidget {
   const TransactionPage({super.key});
@@ -215,7 +216,7 @@ class _TransactionPageState extends ConsumerState<TransactionPage> {
                               ),
                             ],
                           ),
-                        );
+                        ).animate().fadeIn(delay: (index * 50).ms).slideX(begin: 0.05);
                       },
                     ),
                   ),

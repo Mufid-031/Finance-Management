@@ -4,10 +4,13 @@ import 'package:finance_management/features/ai_assistant/presentation/pages/ai_a
 import 'package:finance_management/features/analysis/presentation/pages/analysis_page.dart';
 import 'package:finance_management/features/auth/presentation/providers/auth_provider.dart';
 import 'package:finance_management/features/dashboard/presentation/pages/home_page.dart';
+import 'package:finance_management/features/notification/presentation/providers/notification_provider.dart';
 import 'package:finance_management/features/profile/presentation/pages/profile_page.dart';
+import 'package:finance_management/features/profile/presentation/providers/user_profile_provider.dart';
 import 'package:finance_management/features/transaction/domain/transaction.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class MainPage extends ConsumerStatefulWidget {
   const MainPage({super.key});
@@ -35,8 +38,7 @@ class _MainPageState extends ConsumerState<MainPage> {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      resizeToAvoidBottomInset:
-          false, // BOSS, ini kuncinya agar FAB tidak naik menutupi input
+      resizeToAvoidBottomInset: false,
       appBar: _buildAppBar(context, user?.email),
       body: pages[index],
 
@@ -95,12 +97,19 @@ class _MainPageState extends ConsumerState<MainPage> {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, String? email) {
-    final String initial = email != null && email.isNotEmpty
-        ? email[0].toUpperCase()
+  PreferredSizeWidget _buildAppBar(
+    BuildContext context,
+    String? fallbackEmail,
+  ) {
+    final profileState = ref.watch(userProfileNotifierProvider);
+    final profile = profileState.profile;
+
+    final String displayName =
+        profile?.displayName ?? fallbackEmail?.split("@")[0] ?? 'User';
+    final String initial = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
         : 'U';
 
-    final displayEmail = email?.split("@")[0] ?? 'User';
     final iconColor = Theme.of(context).colorScheme.onSurface;
 
     return AppBar(
@@ -110,22 +119,31 @@ class _MainPageState extends ConsumerState<MainPage> {
         padding: const EdgeInsets.only(left: 15),
         child: CircleAvatar(
           backgroundColor: AppColors.widgetColor,
-          child: Text(
-            initial,
-            style: const TextStyle(
-              color: AppColors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
-          ),
+          backgroundImage:
+              (profile?.photoUrl != null && profile!.photoUrl!.isNotEmpty)
+              ? NetworkImage(profile.photoUrl!)
+              : null,
+          child: (profile?.photoUrl == null || profile!.photoUrl!.isEmpty)
+              ? Text(
+                  initial,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                )
+              : null,
         ),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Hello,", style: TextStyle(fontSize: 12, color: AppColors.grey)),
+          const Text(
+            "Welcome back,",
+            style: TextStyle(fontSize: 12, color: AppColors.grey),
+          ),
           Text(
-            displayEmail,
+            displayName,
             style: TextStyle(
               fontSize: 18,
               color: iconColor,
@@ -135,10 +153,22 @@ class _MainPageState extends ConsumerState<MainPage> {
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.notifications_none, color: iconColor),
-        ),
+        ref.watch(unreadNotificationsCountProvider) > 0
+            ? Badge(
+                label: Text(
+                  ref.watch(unreadNotificationsCountProvider).toString(),
+                  style: const TextStyle(fontSize: 10),
+                ),
+                backgroundColor: AppColors.red,
+                child: IconButton(
+                  onPressed: () => context.push('/notifications'),
+                  icon: Icon(Icons.notifications_none, color: iconColor),
+                ),
+              )
+            : IconButton(
+                onPressed: () => context.push('/notifications'),
+                icon: Icon(Icons.notifications_none, color: iconColor),
+              ),
         const SizedBox(width: 10),
       ],
     );

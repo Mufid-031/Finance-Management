@@ -1,4 +1,5 @@
 import 'package:finance_management/core/theme/app_colors.dart';
+import 'package:finance_management/core/utils/currency_helper.dart';
 import 'package:finance_management/features/settings/presentation/providers/settings_provider.dart';
 import 'package:finance_management/features/wallet/domain/wallet.dart';
 import 'package:finance_management/features/wallet/presentation/providers/wallet_provider.dart';
@@ -30,18 +31,22 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
     Icons.account_box,
   ];
 
-  final List<String> currencies = ['USD', 'IDR', 'EUR', 'GBP', 'JPY'];
-
   @override
   void initState() {
     super.initState();
+    final settings = ref.read(settingsProvider);
+
     nameController = TextEditingController(text: widget.wallet?.name);
     balanceController = TextEditingController(
-      text: widget.wallet?.balance.toString(),
+      text: (widget.wallet?.balance ?? 0.0)
+          .toConverted(settings)
+          .toStringAsFixed(2),
     );
     selectedIconCode =
         widget.wallet?.iconCode ?? Icons.account_balance_wallet.codePoint;
-    selectedCurrency = widget.wallet?.currency ?? 'USD';
+
+    // BOSS, mata uang ikuti global settings
+    selectedCurrency = settings.currency;
   }
 
   @override
@@ -80,57 +85,70 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
           ),
           Text(
             widget.wallet == null ? "Add New Wallet" : "Edit Wallet",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          const Text(
+            "Enter your wallet details to keep track of your money.",
+            style: TextStyle(color: AppColors.grey, fontSize: 13),
+          ),
+          const SizedBox(height: 25),
           TextField(
             controller: nameController,
-            decoration: const InputDecoration(
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
               labelText: "Wallet Name",
-              border: OutlineInputBorder(),
+              labelStyle: const TextStyle(color: AppColors.grey),
+              prefixIcon: const Icon(
+                Icons.drive_file_rename_outline,
+                color: AppColors.main,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: const BorderSide(color: AppColors.main),
+              ),
             ),
           ),
           const SizedBox(height: 15),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  controller: balanceController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: "Initial Balance",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+          TextField(
+            controller: balanceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
+              labelText:
+                  widget.wallet == null ? "Initial Balance" : "Current Balance",
+              labelStyle: const TextStyle(color: AppColors.grey),
+              prefixIcon: const Icon(
+                Icons.account_balance_wallet_outlined,
+                color: AppColors.main,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  value: selectedCurrency,
-                  decoration: const InputDecoration(
-                    labelText: "Currency",
-                    border: OutlineInputBorder(),
-                  ),
-                  items: currencies.map((c) => DropdownMenuItem(
-                    value: c,
-                    child: Text(c, style: const TextStyle(fontSize: 12)),
-                  )).toList(),
-                  onChanged: (val) => setState(() => selectedCurrency = val!),
-                ),
+              suffixText: selectedCurrency,
+              suffixStyle: const TextStyle(
+                color: AppColors.main,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            "Select Icon",
-            style: TextStyle(
-              color: AppColors.grey,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: const BorderSide(color: AppColors.main),
+              ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 25),
+          const Text(
+            "Select Visual Icon",
+            style: TextStyle(
+              color: AppColors.grey,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 15),
           SizedBox(
             height: 60,
             child: ListView.builder(
@@ -142,53 +160,63 @@ class _AddWalletModalState extends ConsumerState<AddWalletModal> {
                 return GestureDetector(
                   onTap: () =>
                       setState(() => selectedIconCode = icon.codePoint),
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.only(right: 15),
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.main
                           : AppColors.widgetColor,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isSelected ? AppColors.main : Colors.transparent,
-                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.main.withValues(alpha: 0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
                     ),
                     child: Icon(
                       icon,
                       color: isSelected ? Colors.black : AppColors.grey,
-                      size: 24,
+                      size: 26,
                     ),
                   ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 35),
           SizedBox(
             width: double.infinity,
+            height: 55,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.main,
-                padding: const EdgeInsets.symmetric(vertical: 15),
+                foregroundColor: Colors.black,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
                 ),
               ),
               onPressed: () async {
                 if (nameController.text.isNotEmpty) {
                   final inputAmount =
                       double.tryParse(balanceController.text) ?? 0.0;
-                  
+                  final baseAmount = inputAmount.toBase(settings);
+
                   // BOSS, kita simpan saldo awal sesuai mata uang yang dipilih.
                   // Nantinya saat transaksi, baru kita konversi jika perlu.
-                  
+
                   await ref
                       .read(walletNotifierProvider.notifier)
                       .saveWallet(
                         id: widget.wallet?.id,
                         name: nameController.text,
-                        balance: inputAmount,
+                        balance: baseAmount,
                         iconCode: selectedIconCode,
                         currency: selectedCurrency,
                       );
